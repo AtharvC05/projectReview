@@ -18,7 +18,7 @@ def connect_db():
             host='localhost',
             user='root',
             password='1234',
-            database='project_review',
+            database='project_review1',
             autocommit=True,
         )
     except mysql.connector.Error as e:
@@ -152,10 +152,6 @@ def register():
             
         if password != confirm_password:
             return jsonify({'error': 'Passwords do not match'}), 400
-            
-        # Username constraints
-        if not username.endswith('@faculty'):
-            return jsonify({'error': 'Username must end with @faculty domain'}), 400
             
         # Password constraints
         if len(password) < 8:

@@ -13,7 +13,7 @@ def connect_db():
             host="localhost",
             user="root", 
             password="1234",
-            database="project_review",
+            database="project_review1",
             autocommit=True,
         )
     except mysql.connector.Error as e:

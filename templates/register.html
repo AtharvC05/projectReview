@@ -402,12 +402,6 @@
             const password = formData.get('password');
             const confirmPassword = formData.get('confirm_password');
             
-            // Client-side validation
-            if (!username.endsWith('@faculty')) {
-                showAlert('Username must end with @faculty', 'error');
-                return;
-            }
-            
             if (password !== confirmPassword) {
                 showAlert('Passwords do not match', 'error');
                 return;

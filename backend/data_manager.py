@@ -1,6 +1,6 @@
-# simple_data_manager.py
+# simplified_data_manager.py
 
-from flask import Blueprint, render_template, request, jsonify, send_file, session
+from flask import Blueprint, render_template, request, jsonify, send_file
 import logging
 import io
 import pandas as pd
@@ -12,61 +12,20 @@ import base64
 import openpyxl
 import os
 import hashlib
-import threading
-import time
-import fcntl
 import backend.sheet1 as sheet1
+from backend.auth import admin_required
 
 logger = logging.getLogger(__name__)
 
-bp = Blueprint('simple_data_manager', __name__, template_folder='templates')
+bp = Blueprint('data_manager', __name__, template_folder='templates')
 
-# Single file configuration
-STORAGE_DIR = 'stored_files'
-SINGLE_FILE_PATH = os.path.join(STORAGE_DIR, 'master_project_data.xlsx')
-SINGLE_METADATA_PATH = os.path.join(STORAGE_DIR, 'master_metadata.json')
-FILE_LOCK_PATH = os.path.join(STORAGE_DIR, 'master.lock')
+# Single file storage for admin (no user sessions)
+UPLOAD_FOLDER = 'admin_files'
+ADMIN_FILE_PATH = os.path.join(UPLOAD_FOLDER, 'current_project_data.xlsx')
+ADMIN_METADATA_PATH = os.path.join(UPLOAD_FOLDER, 'current_metadata.json')
 
-# Global state for writer/reader control
-current_writer = None
-writer_lock = threading.Lock()
-last_modification_time = None
-
-def ensure_storage_directory():
-    """Ensure storage directory exists"""
-    os.makedirs(STORAGE_DIR, exist_ok=True)
-
-def get_user_session_id():
-    """Get or create a session ID for the user"""
-    if 'user_session_id' not in session:
-        session['user_session_id'] = hashlib.md5(
-            (str(datetime.now()) + str(request.remote_addr or '')).encode()
-        ).hexdigest()
-    return session['user_session_id']
-
-def is_writer(session_id):
-    """Check if current session is the active writer"""
-    global current_writer
-    with writer_lock:
-        return current_writer == session_id
-
-def acquire_writer_lock(session_id):
-    """Acquire writer permissions"""
-    global current_writer
-    with writer_lock:
-        if current_writer is None or current_writer == session_id:
-            current_writer = session_id
-            return True
-        return False
-
-def release_writer_lock(session_id):
-    """Release writer permissions"""
-    global current_writer
-    with writer_lock:
-        if current_writer == session_id:
-            current_writer = None
-            return True
-        return False
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 def normalize_name(name: str) -> str:
     if not name:
@@ -163,6 +122,35 @@ def normalize_column_name(column_name: str) -> str:
     
     return column_name
 
+def normalize_sheet_name(sheet_name: str) -> str:
+    """Normalize sheet names to identify division and schedule sheets"""
+    if not sheet_name:
+        return sheet_name
+    
+    sheet_upper = sheet_name.upper().strip()
+    
+    # Division A variations
+    if any(keyword in sheet_upper for keyword in [
+        'FINAL DIV A', 'FINAL DIV-A', 'FINALDIVA', 'FINAL_DIV_A',
+        'DIV A', 'DIV-A', 'DIVA', 'DIVISION A', 'DIVISION-A'
+    ]):
+        return 'div_a'
+    
+    # Division B variations
+    if any(keyword in sheet_upper for keyword in [
+        'FINAL DIV B', 'FINAL DIV-B', 'FINALDIVB', 'FINAL_DIV_B',
+        'DIV B', 'DIV-B', 'DIVB', 'DIVISION B', 'DIVISION-B'
+    ]):
+        return 'div_b'
+    
+    # Schedule variations
+    if any(keyword in sheet_upper for keyword in [
+        'SCHEDULE', 'SCHED', 'PANEL SCHEDULE', 'EVALUATION SCHEDULE'
+    ]):
+        return 'schedule'
+    
+    return sheet_name
+
 def normalize_dataframe_columns(df):
     """Normalize all column names in a DataFrame"""
     if df is None or df.empty:
@@ -174,10 +162,11 @@ def normalize_dataframe_columns(df):
         if normalized:
             column_mapping[col] = normalized
     
-    return df.rename(columns=column_mapping)
+    df = df.rename(columns=column_mapping)
+    return df
 
 def detect_and_normalize_sheets_robust(xls):
-    """More robust sheet detection that handles edge cases"""
+    """Robust sheet detection that handles edge cases"""
     sheet_names = xls.sheet_names
     detected_sheets = {
         'div_a': None,
@@ -220,225 +209,40 @@ def detect_and_normalize_sheets_robust(xls):
     logger.info(f"Final detection results: {detected_sheets}")
     return detected_sheets
 
-def save_master_file(file_content, metadata):
-    """Save the master Excel file with proper locking"""
-    global last_modification_time
-    ensure_storage_directory()
-    
+def save_admin_file(file_content, metadata):
+    """Save Excel file and metadata for admin"""
     try:
         # Save Excel file
-        with open(SINGLE_FILE_PATH, 'wb') as f:
+        with open(ADMIN_FILE_PATH, 'wb') as f:
             f.write(file_content)
         
         # Save metadata
-        metadata['last_modified'] = datetime.now().isoformat()
-        with open(SINGLE_METADATA_PATH, 'w') as f:
-            json.dump(metadata, f, indent=2)
+        with open(ADMIN_METADATA_PATH, 'w') as f:
+            json.dump(metadata, f)
         
-        last_modification_time = datetime.now()
-        logger.info("Master file saved successfully")
         return True
-        
     except Exception as e:
-        logger.error(f"Error saving master file: {e}")
+        logger.error(f"Error saving admin file: {e}")
         return False
 
-def load_master_file():
-    """Load the master Excel file"""
-    ensure_storage_directory()
-    
+def load_admin_file():
+    """Load Excel file and metadata for admin"""
     try:
-        if not os.path.exists(SINGLE_FILE_PATH) or not os.path.exists(SINGLE_METADATA_PATH):
+        if not os.path.exists(ADMIN_FILE_PATH) or not os.path.exists(ADMIN_METADATA_PATH):
             return None, None
         
         # Load Excel file
-        with open(SINGLE_FILE_PATH, 'rb') as f:
+        with open(ADMIN_FILE_PATH, 'rb') as f:
             file_content = f.read()
         
         # Load metadata
-        with open(SINGLE_METADATA_PATH, 'r') as f:
+        with open(ADMIN_METADATA_PATH, 'r') as f:
             metadata = json.load(f)
         
         return file_content, metadata
-        
     except Exception as e:
-        logger.error(f"Error loading master file: {e}")
+        logger.error(f"Error loading admin file: {e}")
         return None, None
-
-def update_master_file_cell(sheet_name, row, col, new_value):
-    """Update a specific cell in the master file"""
-    global last_modification_time
-    
-    try:
-        if not os.path.exists(SINGLE_FILE_PATH):
-            return False
-            
-        # Load workbook
-        wb = openpyxl.load_workbook(SINGLE_FILE_PATH)
-        
-        # Find the correct worksheet
-        ws = None
-        for ws_name in wb.sheetnames:
-            if ws_name.upper() == sheet_name.upper():
-                ws = wb[ws_name]
-                break
-        
-        if ws:
-            # Update the cell (openpyxl uses 1-based indexing)
-            ws.cell(row=row + 1, column=col + 1, value=new_value)
-            
-            # Save the workbook
-            wb.save(SINGLE_FILE_PATH)
-            last_modification_time = datetime.now()
-            
-            # Update metadata
-            metadata = {}
-            if os.path.exists(SINGLE_METADATA_PATH):
-                with open(SINGLE_METADATA_PATH, 'r') as f:
-                    metadata = json.load(f)
-            
-            metadata['last_modified'] = last_modification_time.isoformat()
-            metadata['last_cell_update'] = {
-                'sheet': sheet_name,
-                'row': row,
-                'col': col,
-                'value': new_value,
-                'timestamp': last_modification_time.isoformat()
-            }
-            
-            with open(SINGLE_METADATA_PATH, 'w') as f:
-                json.dump(metadata, f, indent=2)
-            
-            return True
-            
-    except Exception as e:
-        logger.error(f"Error updating master file cell: {e}")
-        return False
-
-def process_division_enhanced_with_normalization(df, division_name):
-    """Enhanced division processing with column normalization"""
-    if df is None or df.empty:
-        return 0, 0
-    
-    df = normalize_dataframe_columns(df)
-    
-    conn = sheet1.connect_db()
-    cur = conn.cursor(dictionary=True)
-    
-    group_id = None
-    processed_groups = []
-    processed_members = 0
-    
-    logger.info(f"Processing division {division_name} with {len(df)} rows")
-    logger.info(f"Columns available: {list(df.columns)}")
-    
-    for i, row in df.iterrows():
-        try:
-            # Check if 'Group No.' column exists and get its position
-            group_no_col = None
-            for col_idx, col_name in enumerate(df.columns):
-                if 'Group No.' in str(col_name):
-                    group_no_col = col_idx
-                    break
-            
-            if group_no_col is not None:
-                group_no_value = df.iloc[i, group_no_col]
-                
-                # Safe null check and conversion
-                if pd.notna(group_no_value) and str(group_no_value).strip() not in ['', 'nan', 'None']:
-                    group_id = str(group_no_value).strip()
-                    
-                    # Normalize group ID format
-                    if group_id.startswith('BI'):
-                        pass  # Already in correct format
-                    elif group_id.startswith('BIA') or group_id.startswith('BIB'):
-                        if '-' not in group_id and len(group_id) >= 5:
-                            group_id = f"{group_id[:3]}-{group_id[3:]}"
-                    
-                    # Insert project data using iloc for safe access
-                    try:
-                        # Find column indices for project data
-                        project_domain_col = next((idx for idx, col in enumerate(df.columns) if 'Project Domain' in str(col)), None)
-                        project_title_col = next((idx for idx, col in enumerate(df.columns) if 'Title of the Project' in str(col)), None)
-                        sponsor_company_col = next((idx for idx, col in enumerate(df.columns) if 'sponsored company' in str(col)), None)
-                        guide_name_col = next((idx for idx, col in enumerate(df.columns) if 'Guide' in str(col)), None)
-                        
-                        def safe_get_value(col_idx):
-                            if col_idx is not None:
-                                val = df.iloc[i, col_idx]
-                                return str(val).strip() if pd.notna(val) else ""
-                            return ""
-                        
-                        project_domain = safe_get_value(project_domain_col)[:255]
-                        project_title = safe_get_value(project_title_col)[:500]
-                        sponsor_company = safe_get_value(sponsor_company_col)[:255]
-                        guide_name = safe_get_value(guide_name_col)[:100]
-                        
-                        cur.execute(
-                            """INSERT IGNORE INTO projects 
-                               (group_id, division, project_domain, project_title, sponsor_company, guide_name, 
-                                mentor_name, mentor_email, mentor_mobile, evaluator1_name, evaluator2_name) 
-                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                            (group_id, division_name, project_domain, project_title, sponsor_company, guide_name, "", "", "", "", "")
-                        )
-                        
-                        if group_id not in processed_groups:
-                            processed_groups.append(group_id)
-                            logger.debug(f"Added project: {group_id}")
-                            
-                    except Exception as project_error:
-                        logger.error(f"Error inserting project {group_id}: {str(project_error)}")
-            
-            # Process member data using iloc for safe access
-            if group_id:  # Only process if we have a valid group_id
-                # Find column indices for member data
-                roll_no_col = next((idx for idx, col in enumerate(df.columns) if 'Roll No.' in str(col)), None)
-                student_name_col = next((idx for idx, col in enumerate(df.columns) if 'group member' in str(col).lower()), None)
-                contact_details_col = next((idx for idx, col in enumerate(df.columns) if 'Contact' in str(col)), None)
-                
-                def safe_get_member_value(col_idx):
-                    if col_idx is not None:
-                        val = df.iloc[i, col_idx]
-                        if pd.notna(val):
-                            return str(val).strip()
-                    return ""
-                
-                roll_no = safe_get_member_value(roll_no_col)
-                student_name = safe_get_member_value(student_name_col)
-                
-                # Only proceed if both have valid non-empty values
-                if roll_no and roll_no not in ['nan', 'None'] and student_name and student_name not in ['nan', 'None']:
-                    try:
-                        contact_details = safe_get_member_value(contact_details_col)
-                        
-                        # Clean up contact details
-                        if contact_details and contact_details != 'nan':
-                            # Remove decimal points from contact details if present
-                            if '.' in contact_details and contact_details.replace('.', '').isdigit():
-                                contact_details = contact_details.split('.')[0]
-                        else:
-                            contact_details = ""
-                        
-                        cur.execute(
-                            "INSERT IGNORE INTO members (group_id, roll_no, student_name, contact_details) VALUES (%s, %s, %s, %s)",
-                            (group_id, roll_no, student_name, contact_details)
-                        )
-                        processed_members += 1
-                        logger.debug(f"Processed member: {group_id} - {roll_no} - {student_name} - {contact_details}")
-                        
-                    except Exception as member_error:
-                        logger.error(f"Error inserting member for {group_id}: {str(member_error)}")
-                
-        except Exception as row_error:
-            logger.error(f"Error processing row {i} in {division_name}: {str(row_error)}")
-            continue
-            
-    conn.commit()
-    cur.close()
-    conn.close()
-    
-    logger.info(f"Division {division_name}: Processed {len(processed_groups)} groups and {processed_members} members")
-    return len(processed_groups), processed_members
 
 def extract_all_group_ids(row_data):
     """Extract group IDs from row data"""
@@ -508,6 +312,85 @@ def assign_evaluators_from_panel(panel_professors, group_ids):
     conn.close()
     return assignments
 
+def process_division_enhanced_with_normalization(df, division_name):
+    """Enhanced division processing with column normalization"""
+    if df is None or df.empty:
+        return 0, 0
+    
+    # Normalize column names first
+    df = normalize_dataframe_columns(df)
+    
+    conn = sheet1.connect_db()
+    cur = conn.cursor(dictionary=True)
+    
+    group_id = None
+    processed_groups = []
+    processed_members = 0
+    
+    for i, row in df.iterrows():
+        try:
+            # Use normalized column names
+            group_no_value = row.get('Group No.', '')
+            if pd.notnull(group_no_value) and str(group_no_value).strip():
+                group_id = str(group_no_value).strip()
+                
+                # Normalize group ID format
+                if group_id.startswith('BI'):
+                    pass  # Already in correct format
+                elif group_id.startswith('BIA') or group_id.startswith('BIB'):
+                    if '-' not in group_id and len(group_id) >= 5:
+                        group_id = f"{group_id[:3]}-{group_id[3:]}"
+                
+                # Insert project data with normalized column access
+                try:
+                    project_domain = str(row.get('Project Domain', '')).strip()[:255] if pd.notnull(row.get('Project Domain', '')) else ""
+                    project_title = str(row.get('Title of the Project', '')).strip()[:500] if pd.notnull(row.get('Title of the Project', '')) else ""
+                    sponsor_company = str(row.get('Name of the sponsored company ', '')).strip()[:255] if pd.notnull(row.get('Name of the sponsored company ', '')) else ""
+                    guide_name = str(row.get('Name of the Guide', '')).strip()[:100] if pd.notnull(row.get('Name of the Guide', '')) else ""
+                    
+                    cur.execute(
+                        """INSERT IGNORE INTO projects 
+                           (group_id, division, project_domain, project_title, sponsor_company, guide_name, 
+                            mentor_name, mentor_email, mentor_mobile, evaluator1_name, evaluator2_name) 
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                        (group_id, division_name, project_domain, project_title, sponsor_company, guide_name, "", "", "", "", "")
+                    )
+                    
+                    if group_id not in processed_groups:
+                        processed_groups.append(group_id)
+                        
+                except Exception as project_error:
+                    logger.error(f"Error inserting project {group_id}: {str(project_error)}")
+            
+            # Process member data with normalized column access
+            if (group_id and 
+                pd.notnull(row.get('Roll No.', '')) and 
+                pd.notnull(row.get('Name of the group member', ''))):
+                
+                try:
+                    roll_no = str(row.get('Roll No.', '')).strip()
+                    student_name = str(row.get('Name of the group member', '')).strip()[:100]
+                    contact_details = str(row.get('Contact details', '')).strip() if pd.notnull(row.get('Contact details', '')) else ""
+                    
+                    if roll_no and student_name:
+                        cur.execute(
+                            "INSERT IGNORE INTO members (group_id, roll_no, student_name, contact_details) VALUES (%s, %s, %s, %s)",
+                            (group_id, roll_no, student_name, contact_details)
+                        )
+                        processed_members += 1
+                        
+                except Exception as member_error:
+                    logger.error(f"Error inserting member for {group_id}: {str(member_error)}")
+                
+        except Exception as row_error:
+            logger.warning(f"Error processing row {i} in {division_name}: {str(row_error)}")
+            continue
+            
+    conn.commit()
+    cur.close()
+    conn.close()
+    return len(processed_groups), processed_members
+
 def process_all_data_with_normalization(div_a, div_b, sched):
     """Process all data with column normalization"""
     conn = sheet1.connect_db()
@@ -549,11 +432,7 @@ def process_all_data_with_normalization(div_a, div_b, sched):
                         panel_profs.append(clean_prof)
             
             if not panel_profs:
-                panel_profs = [
-                    f"Default Panel {track} Prof 1",
-                    f"Default Panel {track} Prof 2",
-                    f"Default Panel {track} Prof 3"
-                ]
+                panel_profs = [f"Default Panel {track} Prof 1", f"Default Panel {track} Prof 2", f"Default Panel {track} Prof 3"]
             
             # Use normalized column name
             location = str(row.get('Location', '')).strip() if pd.notnull(row.get('Location', '')) else f"Room {track}"
@@ -570,12 +449,6 @@ def process_all_data_with_normalization(div_a, div_b, sched):
             for assignment in assignments:
                 try:
                     group_id = assignment['group_id']
-
-                    # ✅ Ensure the project exists before inserting panel assignment
-                    cur.execute("SELECT group_id FROM projects WHERE group_id = %s", (group_id,))
-                    if not cur.fetchone():
-                        logger.warning(f"Skipping schedule group {group_id}, not found in projects")
-                        continue
                     
                     cur.execute("""
                         INSERT INTO panel_assignments
@@ -659,248 +532,66 @@ def generate_cell_mapping(div_a, div_b, sched, div_a_sheet, div_b_sheet, schedul
     
     return mapping
 
-def update_main_database_tables(cursor, sheet_name, row, col, new_value):
-    """Update main database tables based on sheet type and position"""
+@bp.route('/data-manager')
+@admin_required                     # <-- added
+def data_manager_page():
+    return render_template('data-manager.html')
+
+
+@bp.route('/api/check-stored-file', methods=['GET'])
+def check_stored_file():
+    """Check if admin has a stored file"""
     try:
-        sheet_upper = sheet_name.upper()
+        file_content, metadata = load_admin_file()
         
-        # Load metadata to get actual sheet names
-        file_content, metadata = load_master_file()
-        
-        if not metadata:
-            logger.warning("No metadata found for database sync")
-            return False
-        
-        sheet_names = metadata.get('sheet_names', {})
-        
-        # Determine which type of sheet we're dealing with
-        if sheet_name in [sheet_names.get('div_a'), 'div_a'] or 'DIV A' in sheet_upper or 'DIVA' in sheet_upper:
-            return update_division_database(cursor, 'A', row, col, new_value)
-        elif sheet_name in [sheet_names.get('div_b'), 'div_b'] or 'DIV B' in sheet_upper or 'DIVB' in sheet_upper:
-            return update_division_database(cursor, 'B', row, col, new_value)
-        elif sheet_name in [sheet_names.get('schedule'), 'schedule'] or 'SCHEDULE' in sheet_upper:
-            return update_schedule_database(cursor, row, col, new_value)
-        
-        return False
-        
-    except Exception as e:
-        logger.error(f"Database sync error: {e}")
-        return False
-
-def update_division_database(cursor, division, row, col, new_value):
-    """Update projects/members tables based on division and position"""
-    try:
-        if row <= 3:  # Skip header rows
-            return False
-        
-        data_row = row - 4
-        
-        # Get all groups for this division to map row to group
-        cursor.execute("""
-            SELECT DISTINCT p.group_id
-            FROM projects p 
-            WHERE p.division = %s 
-            ORDER BY p.group_id
-        """, (division,))
-        division_projects = cursor.fetchall()
-        
-        if not division_projects or data_row >= len(division_projects):
-            logger.warning(f"No project found for division {division}, row {data_row}")
-            return False
-        
-        target_project = division_projects[data_row]
-        group_id = target_project['group_id']
-        
-        logger.info(f"Updating division {division}, group {group_id}, col {col} to '{new_value}'")
-        
-        # Column mapping based on typical Excel structure
-        if col == 0:  # Group No.
-            cursor.execute("UPDATE projects SET group_id = %s WHERE group_id = %s", (new_value, group_id))
-            cursor.execute("UPDATE members SET group_id = %s WHERE group_id = %s", (new_value, group_id))
-            
-        elif col == 1:  # Roll No.
-            cursor.execute("SELECT id FROM members WHERE group_id = %s ORDER BY id LIMIT 1", (group_id,))
-            member = cursor.fetchone()
-            if member:
-                cursor.execute("UPDATE members SET roll_no = %s WHERE id = %s", (new_value, member['id']))
-            
-        elif col == 2:  # Student Name
-            cursor.execute("SELECT id FROM members WHERE group_id = %s ORDER BY id LIMIT 1", (group_id,))
-            member = cursor.fetchone()
-            if member:
-                cursor.execute("UPDATE members SET student_name = %s WHERE id = %s", (new_value, member['id']))
-            
-        elif col == 3:  # Contact Details
-            cursor.execute("SELECT id FROM members WHERE group_id = %s ORDER BY id LIMIT 1", (group_id,))
-            member = cursor.fetchone()
-            if member:
-                cursor.execute("UPDATE members SET contact_details = %s WHERE id = %s", (new_value, member['id']))
-            
-        elif col == 4:  # Project Domain
-            cursor.execute("UPDATE projects SET project_domain = %s WHERE group_id = %s", (new_value[:255], group_id))
-            
-        elif col == 5:  # Project Title
-            cursor.execute("UPDATE projects SET project_title = %s WHERE group_id = %s", (new_value[:500], group_id))
-            
-        elif col == 6:  # Sponsor Company
-            cursor.execute("UPDATE projects SET sponsor_company = %s WHERE group_id = %s", (new_value[:255], group_id))
-            
-        elif col == 7:  # Guide Name
-            cursor.execute("UPDATE projects SET guide_name = %s WHERE group_id = %s", (new_value[:100], group_id))
-            
-        else:
-            logger.info(f"Column {col} not mapped for division updates")
-            return False
-        
-        logger.info(f"Successfully updated division {division}, group {group_id}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Division database update error: {e}")
-        return False
-
-def update_schedule_database(cursor, row, col, new_value):
-    """Update panel_assignments table based on schedule position"""
-    try:
-        if row <= 2:  # Skip header rows
-            return False
-        
-        data_row = row - 3
-        
-        # Get all tracks to map row to track
-        cursor.execute("SELECT DISTINCT track FROM panel_assignments ORDER BY track")
-        tracks = cursor.fetchall()
-        
-        if not tracks or data_row >= len(tracks):
-            logger.warning(f"No track found for schedule row {data_row}")
-            return False
-        
-        target_track = tracks[data_row]['track']
-        
-        logger.info(f"Updating schedule track {target_track}, col {col} to '{new_value}'")
-        
-        # Column mapping for schedule
-        if col == 0:  # Track
-            old_track = target_track
-            cursor.execute("UPDATE panel_assignments SET track = %s WHERE track = %s", (new_value, old_track))
-            
-        elif col == 1:  # Panel Professors
-            cursor.execute("UPDATE panel_assignments SET panel_professors = %s WHERE track = %s", (new_value, target_track))
-            
-        elif col == 2:  # Group IDs
-            logger.info("Group ID updates in schedule may require special handling")
-            return False
-            
-        elif col == 3:  # Location
-            cursor.execute("UPDATE panel_assignments SET location = %s WHERE track = %s", (new_value, target_track))
-            
-        else:
-            logger.info(f"Column {col} not mapped for schedule updates")
-            return False
-        
-        logger.info(f"Successfully updated schedule track {target_track}")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Schedule database update error: {e}")
-        return False
-
-# API Endpoints
-
-@bp.route('/simple-data-manager')
-def simple_data_manager_page():
-    return render_template('simple-data-manager.html')
-
-@bp.route('/api/check-master-file', methods=['GET'])
-def check_master_file():
-    """Check if master file exists and get user permissions"""
-    try:
-        session_id = get_user_session_id()
-        file_content, metadata = load_master_file()
-        
-        user_is_writer = is_writer(session_id)
-        can_acquire_writer = current_writer is None
-        
-        response = {
-            'has_file': file_content is not None,
-            'is_writer': user_is_writer,
-            'can_acquire_writer': can_acquire_writer,
-            'current_writer': current_writer,
-            'metadata': metadata if metadata else {}
-        }
-        
-        if metadata:
-            response['upload_date'] = metadata.get('last_modified', 'Unknown')
-            response['last_cell_update'] = metadata.get('last_cell_update', {})
-        
-        return jsonify(response)
-            
-    except Exception as e:
-        logger.error(f"Error checking master file: {e}")
-        return jsonify({'has_file': False, 'error': str(e)})
-
-@bp.route('/api/acquire-writer-permission', methods=['POST'])
-def acquire_writer_permission():
-    """Acquire writer permissions"""
-    try:
-        session_id = get_user_session_id()
-        success = acquire_writer_lock(session_id)
-        
-        if success:
+        if file_content and metadata:
             return jsonify({
-                'success': True,
-                'message': 'Writer permissions acquired',
-                'session_id': session_id
+                'has_stored_file': True,
+                'metadata': metadata,
+                'upload_date': metadata.get('upload_date', 'Unknown')
             })
         else:
-            return jsonify({
-                'success': False,
-                'message': f'Another user currently has writer permissions'
-            }), 409
+            return jsonify({'has_stored_file': False})
             
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logger.error(f"Error checking stored file: {e}")
+        return jsonify({'has_stored_file': False})
 
-@bp.route('/api/release-writer-permission', methods=['POST'])
-def release_writer_permission():
-    """Release writer permissions"""
+@bp.route('/api/load-stored-file', methods=['POST'])
+def load_stored_file():
+    """Load admin's stored file"""
     try:
-        session_id = get_user_session_id()
-        success = release_writer_lock(session_id)
-        
-        return jsonify({
-            'success': success,
-            'message': 'Writer permissions released' if success else 'You were not the active writer'
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@bp.route('/api/load-master-file', methods=['POST'])
-def load_master_file_endpoint():
-    """Load the master file"""
-    try:
-        file_content, metadata = load_master_file()
+        file_content, metadata = load_admin_file()
         
         if not file_content or not metadata:
-            return jsonify({'success': False, 'error': 'No master file found'}), 404
+            return jsonify({'success': False, 'error': 'No stored file found'}), 404
         
         # Convert file content to base64
         original_b64 = base64.b64encode(file_content).decode('utf-8')
         
-        # Process the file and extract data
+        # Process the stored file
         xls = pd.ExcelFile(io.BytesIO(file_content))
+        
+        # Get sheet names from metadata
         sheet_names = metadata.get('sheet_names', {})
         
-        # Load and process data
+        if not all([sheet_names.get('div_a'), sheet_names.get('div_b'), sheet_names.get('schedule')]):
+            return jsonify({'success': False, 'error': 'Invalid stored file format'}), 400
+
+        # Load and process data with normalization
         div_a = pd.read_excel(xls, sheet_name=sheet_names['div_a'], skiprows=3)
         div_b = pd.read_excel(xls, sheet_name=sheet_names['div_b'], skiprows=3)
         sched = pd.read_excel(xls, sheet_name=sheet_names['schedule'], skiprows=2)
 
+        # Normalize column names
+        div_a = normalize_dataframe_columns(div_a)
+        div_b = normalize_dataframe_columns(div_b)
+        sched = normalize_dataframe_columns(sched)
+
         # Process with normalization
         extracted_data = process_all_data_with_normalization(div_a, div_b, sched)
         
-        # Generate cell mapping
+        # Generate cell mapping for editing
         cell_mapping = generate_cell_mapping(div_a, div_b, sched, 
                                            sheet_names['div_a'], 
                                            sheet_names['div_b'], 
@@ -912,26 +603,17 @@ def load_master_file_endpoint():
             'extracted_data': extracted_data,
             'cell_mapping': cell_mapping,
             'sheet_names': sheet_names,
-            'message': f'Loaded master file from {metadata.get("last_modified", "Unknown")}'
+            'message': f'Loaded stored file from {metadata.get("upload_date", "Unknown")}'
         })
         
     except Exception as e:
-        logger.error(f"Error loading master file: {str(e)}", exc_info=True)
+        logger.error(f"Error loading stored file: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/import-master-excel', methods=['POST'])
-def import_master_excel():
-    """Import and replace the master Excel file (writer only)"""
+@bp.route('/api/import-excel', methods=['POST'])
+def import_excel():
+    """Import Excel and return both visual representation and extracted data"""
     try:
-        session_id = get_user_session_id()
-        
-        # Check writer permissions
-        if not is_writer(session_id):
-            return jsonify({
-                'success': False, 
-                'error': 'Only the active writer can upload files'
-            }), 403
-        
         file = request.files.get('excel')
         if not file:
             return jsonify({'success': False, 'error': 'No file provided'}), 400
@@ -943,6 +625,8 @@ def import_master_excel():
         
         # Extract data using enhanced normalization
         xls = pd.ExcelFile(io.BytesIO(file_content))
+        
+        # Use the more robust sheet detection
         detected_sheets = detect_and_normalize_sheets_robust(xls)
         
         # Check if all required sheets were found
@@ -951,7 +635,7 @@ def import_master_excel():
             available_sheets = list(xls.sheet_names)
             return jsonify({
                 'success': False,
-                'error': f"Could not detect {missing_sheets} sheets. Available: {available_sheets}"
+                'error': f"Could not detect {missing_sheets} sheets. Available sheets: {available_sheets}. Detected: {detected_sheets}"
             }), 400
 
         # Prepare metadata
@@ -962,17 +646,13 @@ def import_master_excel():
                 'schedule': detected_sheets['schedule']
             },
             'upload_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'original_filename': file.filename,
-            'uploaded_by': session_id
+            'original_filename': file.filename
         }
         
-        # Save master file
-        save_success = save_master_file(file_content, metadata)
+        # Save file for admin
+        save_success = save_admin_file(file_content, metadata)
         
-        if not save_success:
-            return jsonify({'success': False, 'error': 'Failed to save master file'}), 500
-        
-        # Process data
+        # Load and normalize data
         div_a = pd.read_excel(xls, sheet_name=detected_sheets['div_a'], skiprows=3)
         div_b = pd.read_excel(xls, sheet_name=detected_sheets['div_b'], skiprows=3)
         sched = pd.read_excel(xls, sheet_name=detected_sheets['schedule'], skiprows=2)
@@ -991,134 +671,502 @@ def import_master_excel():
                                            detected_sheets['div_b'], 
                                            detected_sheets['schedule'])
         
+        message = 'Excel imported successfully with column normalization and visual preservation'
+        if save_success:
+            message += ' and saved for future access'
+        
         return jsonify({
             'success': True,
             'original_file': original_b64,
             'extracted_data': extracted_data,
             'cell_mapping': cell_mapping,
             'sheet_names': metadata['sheet_names'],
-            'message': 'Master Excel file imported and replaced successfully'
+            'message': message,
+            'normalized_columns': {
+                'div_a': list(div_a.columns),
+                'div_b': list(div_b.columns),
+                'schedule': list(sched.columns)
+            }
         })
         
     except Exception as e:
-        logger.error(f"Master import error: {str(e)}", exc_info=True)
+        logger.error(f"Import error: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/update-master-cell', methods=['POST'])
-def update_master_cell():
-    """Update a cell in the master file (writer only)"""
+@bp.route('/api/update-cell-general', methods=['POST'])
+def update_cell_general():
+    """Update any cell in the Excel sheets and sync with database"""
     try:
-        session_id = get_user_session_id()
-        
-        # Check writer permissions
-        if not is_writer(session_id):
-            return jsonify({
-                'success': False, 
-                'error': 'Only the active writer can modify cells'
-            }), 403
-        
         data = request.get_json()
         sheet_name = data.get('sheet_name')
         row = data.get('row')
         col = data.get('col')
         new_value = data.get('value', '')
+        old_value = data.get('old_value', '')
         
-        # Update master file
-        success = update_master_file_cell(sheet_name, row, col, new_value)
+        # Store the update in database
+        conn = sheet1.connect_db()
+        cur = conn.cursor()
         
-        if success:
-            # Also update database
-            conn = sheet1.connect_db()
-            cur = conn.cursor(dictionary=True)
-            
-            db_success = update_main_database_tables(cur, sheet_name, row, col, new_value)
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            
-            return jsonify({
-                'success': True,
-                'message': f'Updated cell [{row},{col}] in master file',
-                'database_synced': db_success,
-                'last_modified': last_modification_time.isoformat() if last_modification_time else None
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Failed to update master file'}), 500
+        # Create a general cell updates table if it doesn't exist
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS cell_updates (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sheet_name VARCHAR(100),
+                row_num INT,
+                col_num INT,
+                old_value TEXT,
+                new_value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_cell (sheet_name, row_num, col_num)
+            )
+        """)
+        
+        # Store the cell update
+        cur.execute("""
+            INSERT INTO cell_updates (sheet_name, row_num, col_num, old_value, new_value)
+            VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+            old_value = VALUES(old_value),
+            new_value = VALUES(new_value),
+            updated_at = CURRENT_TIMESTAMP
+        """, (sheet_name, row, col, old_value, new_value))
+        
+        # Try to update specific database tables based on sheet and content
+        try:
+            update_specific_database_field(cur, sheet_name, row, col, new_value)
+        except Exception as e:
+            logger.warning(f"Could not update specific database field: {e}")
+        
+        conn.commit()
+        
+        # Update stored admin file
+        update_admin_file_cell(sheet_name, row, col, new_value)
+        
+        cur.close()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Updated cell [{row},{col}] in {sheet_name}'
+        })
         
     except Exception as e:
-        logger.error(f"Master cell update error: {str(e)}")
+        logger.error(f"General cell update error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/export-master-excel', methods=['POST'])
-def export_master_excel():
-    """Export the current master Excel file"""
+def update_admin_file_cell(sheet_name, row, col, new_value):
+    """Update a cell in the stored admin Excel file"""
     try:
-        if not os.path.exists(SINGLE_FILE_PATH):
-            return jsonify({'success': False, 'error': 'No master file to export'}), 404
+        if not os.path.exists(ADMIN_FILE_PATH):
+            return
         
+        # Load workbook
+        wb = openpyxl.load_workbook(ADMIN_FILE_PATH)
+        
+        # Find the correct worksheet
+        ws = None
+        for ws_name in wb.sheetnames:
+            if ws_name.upper() == sheet_name.upper():
+                ws = wb[ws_name]
+                break
+        
+        if ws:
+            # Update the cell (note: openpyxl uses 1-based indexing)
+            ws.cell(row=row + 1, column=col + 1, value=new_value)
+            
+            # Save the workbook
+            wb.save(ADMIN_FILE_PATH)
+            
+    except Exception as e:
+        logger.warning(f"Could not update admin file: {e}")
+
+def update_specific_database_field(cursor, sheet_name, row, col, new_value):
+    """Update specific database fields based on sheet position"""
+    sheet_upper = sheet_name.upper()
+    
+    # Handle Division A/B sheets
+    if any(keyword in sheet_upper for keyword in ['DIV A', 'DIVA', 'DIVISION A']):
+        division = 'A'
+        update_division_field(cursor, division, row, col, new_value)
+    elif any(keyword in sheet_upper for keyword in ['DIV B', 'DIVB', 'DIVISION B']):
+        division = 'B'
+        update_division_field(cursor, division, row, col, new_value)
+    elif any(keyword in sheet_upper for keyword in ['SCHEDULE', 'SCHED']):
+        update_schedule_field(cursor, row, col, new_value)
+
+def update_division_field(cursor, division, row, col, new_value):
+    """Update fields in projects/members tables based on position"""
+    # Common column mappings for division sheets
+    if row < 1:  # Skip header rows
+        return
+        
+    # Approximate column mappings
+    column_mappings = {
+        0: 'group_id',      # Group No.
+        1: 'roll_no',       # Roll No.
+        2: 'student_name',  # Name of group member
+        3: 'contact_details', # Contact details
+        4: 'project_domain', # Project Domain
+        5: 'project_title',  # Title of Project
+        6: 'sponsor_company', # Sponsor Company
+        7: 'guide_name'      # Guide Name
+    }
+    
+    field_name = column_mappings.get(col)
+    if not field_name:
+        return
+    
+    try:
+        if field_name == 'group_id':
+            # Update projects table directly
+            cursor.execute("""
+                UPDATE projects SET group_id = %s 
+                WHERE division = %s AND group_id = (
+                    SELECT old_group_id FROM (
+                        SELECT group_id as old_group_id FROM projects 
+                        WHERE division = %s LIMIT 1 OFFSET %s
+                    ) as temp
+                )
+            """, (new_value, division, division, row - 1))
+        elif field_name in ['roll_no', 'student_name', 'contact_details']:
+            # Update members table
+            cursor.execute("""
+                UPDATE members m
+                JOIN projects p ON m.group_id = p.group_id
+                SET m.{} = %s
+                WHERE p.division = %s
+                LIMIT 1 OFFSET %s
+            """.format(field_name), (new_value, division, row - 1))
+        elif field_name in ['project_domain', 'project_title', 'sponsor_company', 'guide_name']:
+            # Update projects table
+            cursor.execute("""
+                UPDATE projects 
+                SET {} = %s 
+                WHERE division = %s 
+                LIMIT 1 OFFSET %s
+            """.format(field_name), (new_value, division, row - 1))
+            
+    except Exception as e:
+        logger.warning(f"Could not update {field_name} in division {division}: {e}")
+
+def update_schedule_field(cursor, row, col, new_value):
+    """Update schedule/panel assignments based on position"""
+    if row < 1:  # Skip headers
+        return
+        
+    # Schedule column mappings
+    schedule_mappings = {
+        0: 'track',
+        1: 'panel_professors',
+        2: 'group_ids',
+        3: 'location'
+    }
+    
+    field_name = schedule_mappings.get(col)
+    if not field_name:
+        return
+        
+    try:
+        if field_name == 'track':
+            cursor.execute("""
+                UPDATE panel_assignments 
+                SET track = %s 
+                WHERE track = (
+                    SELECT old_track FROM (
+                        SELECT track as old_track FROM panel_assignments 
+                        ORDER BY track LIMIT 1 OFFSET %s
+                    ) as temp
+                )
+            """, (new_value, row - 1))
+        elif field_name in ['panel_professors', 'location']:
+            cursor.execute("""
+                UPDATE panel_assignments 
+                SET {} = %s 
+                ORDER BY track LIMIT 1 OFFSET %s
+            """.format(field_name), (new_value, row - 1))
+            
+    except Exception as e:
+        logger.warning(f"Could not update {field_name} in schedule: {e}")
+
+@bp.route('/api/export-excel', methods=['POST'])
+def export_excel():
+    """Export current admin file as Excel"""
+    try:
+        if not os.path.exists(ADMIN_FILE_PATH):
+            return jsonify({'success': False, 'error': 'No file to export'}), 400
+        
+        # Return the updated admin file
         return send_file(
-            SINGLE_FILE_PATH,
+            ADMIN_FILE_PATH,
             as_attachment=True,
-            download_name=f'master_project_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            download_name=f'updated_project_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         
     except Exception as e:
-        logger.error(f"Master export error: {str(e)}")
+        logger.error(f"Export error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@bp.route('/api/get-file-changes', methods=['GET'])
-def get_file_changes():
-    """Get recent file changes for real-time updates"""
+@bp.route('/api/export-formatted-excel', methods=['POST'])
+def export_formatted_excel():
+    """Export Excel file with original formatting and merged cells preserved"""
     try:
-        file_content, metadata = load_master_file()
+        if not os.path.exists(ADMIN_FILE_PATH):
+            return jsonify({'success': False, 'error': 'No stored file found'}), 404
         
-        if not metadata:
-            return jsonify({'success': False, 'error': 'No master file found'})
+        # Load the original workbook with all formatting preserved
+        wb = openpyxl.load_workbook(ADMIN_FILE_PATH)
         
-        return jsonify({
-            'success': True,
-            'last_modified': metadata.get('last_modified'),
-            'last_cell_update': metadata.get('last_cell_update', {}),
-            'current_writer': current_writer,
-            'has_changes': metadata.get('last_cell_update') is not None
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
-
-@bp.route('/api/debug-master', methods=['GET'])
-def debug_master():
-    """Debug endpoint to check master file and database content"""
-    try:
-        file_content, metadata = load_master_file()
-        
+        # Get database data for updates
         conn = sheet1.connect_db()
         cursor = conn.cursor(dictionary=True)
         
-        cursor.execute("SELECT COUNT(*) as count FROM projects")
-        projects_count = cursor.fetchone()
+        cursor.execute("""
+            SELECT p.group_id, p.division, p.project_domain, p.project_title, 
+                   p.sponsor_company, p.guide_name, p.evaluator1_name, p.evaluator2_name,
+                   COALESCE(m.roll_no, '') as roll_no, 
+                   COALESCE(m.student_name, '') as student_name, 
+                   COALESCE(m.contact_details, '') as contact_details
+            FROM projects p 
+            LEFT JOIN members m ON p.group_id = m.group_id
+            WHERE (p.group_id IS NOT NULL OR m.roll_no IS NOT NULL)
+            ORDER BY p.division, p.group_id, m.roll_no
+        """)
+        database_data = cursor.fetchall()
         
-        cursor.execute("SELECT COUNT(*) as count FROM members")
-        members_count = cursor.fetchone()
-        
-        cursor.execute("SELECT * FROM members LIMIT 3")
-        sample_members = cursor.fetchall()
+        # Get panel assignments
+        cursor.execute("""
+            SELECT track, panel_professors, location, group_id,
+                   guide, reviewer1, reviewer2
+            FROM panel_assignments 
+            ORDER BY track, group_id
+        """)
+        schedule_data = cursor.fetchall()
         
         cursor.close()
         conn.close()
         
-        return jsonify({
-            'master_file_exists': file_content is not None,
-            'metadata': metadata,
-            'current_writer': current_writer,
-            'database': {
-                'projects_count': projects_count['count'],
-                'members_count': members_count['count'],
-                'sample_members': sample_members
-            }
-        })
+        # Update each sheet while preserving formatting
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            sheet_upper = sheet_name.upper()
+            
+            if any(keyword in sheet_upper for keyword in ['DIV A', 'DIVA', 'DIVISION A']):
+                update_division_sheet_formatted(ws, database_data, 'A')
+            elif any(keyword in sheet_upper for keyword in ['DIV B', 'DIVB', 'DIVISION B']):
+                update_division_sheet_formatted(ws, database_data, 'B')
+            elif any(keyword in sheet_upper for keyword in ['SCHEDULE', 'SCHED']):
+                update_schedule_sheet_formatted(ws, schedule_data)
+        
+        # Save to buffer
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=f'formatted_project_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
         
     except Exception as e:
-        return jsonify({'error': str(e)})
+        logger.error(f"Formatted export error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def update_division_sheet_formatted(ws, data, division):
+    """Update division sheet data while preserving all original formatting"""
+    # Filter and group data by division
+    division_data = [row for row in data if row['division'] == division]
+    
+    # Find the header row by looking for "Group No." or similar
+    header_row = None
+    data_start_row = 5  # Default fallback
+    
+    for row_num in range(1, min(15, ws.max_row + 1)):
+        for col_num in range(1, 5):
+            cell_value = ws.cell(row=row_num, column=col_num).value
+            if cell_value and any(keyword in str(cell_value).upper() for keyword in ['GROUP NO', 'ROLL NO', 'NAME OF']):
+                header_row = row_num
+                data_start_row = row_num + 1
+                break
+        if header_row:
+            break
+    
+    current_row = data_start_row
+    current_group = None
+    group_start_row = None
+    
+    for row_data in division_data:
+        # Only process rows that have student data
+        if row_data.get('roll_no') and row_data.get('student_name'):
+            try:
+                # Check if we're starting a new group
+                if row_data['group_id'] != current_group:
+                    current_group = row_data['group_id']
+                    group_start_row = current_row
+                    
+                    # Update group-level information
+                    update_cell_preserve_format(ws, group_start_row, 1, row_data['group_id'])
+                    update_cell_preserve_format(ws, group_start_row, 5, row_data.get('project_domain', ''))
+                    update_cell_preserve_format(ws, group_start_row, 6, row_data.get('project_title', ''))
+                    update_cell_preserve_format(ws, group_start_row, 7, row_data.get('sponsor_company', ''))
+                    update_cell_preserve_format(ws, group_start_row, 8, row_data.get('guide_name', ''))
+                
+                # Update student-level information
+                update_cell_preserve_format(ws, current_row, 2, row_data.get('roll_no', ''))
+                update_cell_preserve_format(ws, current_row, 3, row_data.get('student_name', ''))
+                
+                contact_details = row_data.get('contact_details', '') or ''
+                if contact_details and contact_details != 'None':
+                    update_cell_preserve_format(ws, current_row, 4, contact_details)
+                
+                current_row += 1
+                
+            except Exception as e:
+                logger.warning(f"Error updating division {division} row {current_row}: {e}")
+                current_row += 1
+                continue
+
+def update_schedule_sheet_formatted(ws, schedule_data):
+    """Update schedule sheet while preserving formatting"""
+    # Find the header row
+    header_row = None
+    data_start_row = 3  # Default
+    
+    for row_num in range(1, min(10, ws.max_row + 1)):
+        for col_num in range(1, 5):
+            cell_value = ws.cell(row=row_num, column=col_num).value
+            if cell_value and ('Track' in str(cell_value) or 'track' in str(cell_value).lower()):
+                header_row = row_num
+                data_start_row = row_num + 1
+                break
+        if header_row:
+            break
+    
+    current_row = data_start_row
+    
+    # Group schedule data by track
+    tracks = {}
+    for schedule_row in schedule_data:
+        track = schedule_row.get('track')
+        if track is not None:
+            if track not in tracks:
+                tracks[track] = {
+                    'track': track,
+                    'panel_professors': schedule_row.get('panel_professors', ''),
+                    'location': schedule_row.get('location', ''),
+                    'group_ids': []
+                }
+            if schedule_row.get('group_id'):
+                tracks[track]['group_ids'].append(schedule_row.get('group_id', ''))
+    
+    # Update each track
+    for track_num in sorted(tracks.keys()):
+        track_info = tracks[track_num]
+        
+        try:
+            if current_row <= ws.max_row + 5:
+                # Update track information
+                update_cell_preserve_format(ws, current_row, 1, track_info['track'])
+                
+                # Clean up panel professors text
+                panel_text = track_info['panel_professors']
+                if panel_text:
+                    panel_text = panel_text.replace('|', '\n').replace(',', '\n')
+                    panel_lines = [line.strip() for line in panel_text.split('\n') if line.strip()]
+                    panel_text = '\n'.join(panel_lines)
+                
+                update_cell_preserve_format(ws, current_row, 2, panel_text)
+                
+                # Join group IDs
+                group_ids_str = ' '.join(track_info['group_ids']) if track_info['group_ids'] else ''
+                update_cell_preserve_format(ws, current_row, 3, group_ids_str)
+                
+                update_cell_preserve_format(ws, current_row, 4, track_info['location'])
+                
+                current_row += 1
+            else:
+                logger.warning(f"Reached maximum rows, skipping track {track_num}")
+                break
+                
+        except Exception as e:
+            logger.warning(f"Error updating schedule track {track_num}: {e}")
+            current_row += 1
+
+def update_cell_preserve_format(ws, row, col, value):
+    """Update cell value while preserving all original formatting"""
+    try:
+        if row <= 0 or col <= 0:
+            return
+            
+        cell = ws.cell(row=row, column=col)
+        
+        # Store original formatting
+        original_font = cell.font
+        original_alignment = cell.alignment
+        original_border = cell.border
+        original_fill = cell.fill
+        original_number_format = cell.number_format
+        
+        # Handle None values and clean up the value
+        if value is None:
+            value = ''
+        elif not isinstance(value, (str, int, float)):
+            value = str(value)
+        
+        # Clean up string values
+        if isinstance(value, str):
+            value = value.strip()
+            if value.lower() in ['none', 'null', 'nan']:
+                value = ''
+        
+        # Update value
+        cell.value = value
+        
+        # Restore formatting
+        from openpyxl.styles import Font, Alignment
+        
+        if original_font:
+            cell.font = Font(
+                name=original_font.name,
+                size=original_font.size,
+                bold=original_font.bold,
+                italic=original_font.italic,
+                vertAlign=original_font.vertAlign,
+                underline=original_font.underline,
+                strike=original_font.strike,
+                color=original_font.color
+            )
+        
+        if original_alignment:
+            cell.alignment = Alignment(
+                horizontal=original_alignment.horizontal,
+                vertical=original_alignment.vertical,
+                text_rotation=original_alignment.text_rotation,
+                wrap_text=original_alignment.wrap_text,
+                shrink_to_fit=original_alignment.shrink_to_fit,
+                indent=original_alignment.indent
+            )
+        
+        cell.border = original_border
+        cell.fill = original_fill
+        cell.number_format = original_number_format
+        
+    except Exception as e:
+        logger.warning(f"Error updating cell {row},{col} with value '{value}': {e}")
+
+@bp.route('/api/get-file-info', methods=['GET'])
+def get_file_info():
+    """Get information about stored admin file"""
+    try:
+        if os.path.exists(ADMIN_METADATA_PATH):
+            with open(ADMIN_METADATA_PATH, 'r') as f:
+                metadata = json.load(f)
+            return jsonify({'success': True, 'metadata': metadata})
+        else:
+            return jsonify({'success': False, 'error': 'No file information found'})
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
