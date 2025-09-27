@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Project Review System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .register-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .register-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .register-header p {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .password-requirements {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .password-requirements h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .password-requirements ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .password-requirements li {
+            color: #666;
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .password-requirements li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+        
+        /* Eye icon for password toggle */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper input {
+            padding-right: 38px;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            height: 26px;
+            width: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-password svg {
+            display: block;
+            width: 24px;
+            height: 24px;
+            fill: #888;
+        }
+        .toggle-password.active svg {
+            fill: #764ba2;
+        }
+
+        .security-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e1e5e9;
+        }
+        
+        .security-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .question-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .register-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-top: 20px;
+        }
+        
+        .register-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .register-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1><i class="fas fa-user-plus"></i> Create Account</h1>
+            <p>Join the Project Review System</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required placeholder="yourname@faculty">
+                <small style="color: #666;">Username must end with @faculty</small>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                    <span class="toggle-password" id="togglePassword" tabindex="0" aria-label="Show password">
+                        <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 12c-2.757 0-5-2.243-5-5s2.243-5 5-5 5 2.243 5 5-2.243 5-5 5zm0-8c-1.654 0-3 1.346-3 3s1.346 3 3 3 3-1.346 3-3-1.346-3-3-3z"/></svg>
+                        <svg id="eyeClosed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M2.393 1.379l19.799 19.799-1.414 1.414-3.106-3.107c-1.436.75-3.043 1.201-4.672 1.201-7.633 0-11-7-11-7 1.455-2.956 4.495-6.624 9.016-7.511l-3.239-3.239 1.414-1.414zm6.123 6.123l-1.697-1.697c-2.685.797-5.094 2.84-7.031 6.195 1.455 2.956 4.495 6.624 9.016 7.511l-1.494-1.494c-2.458-.628-4.583-2.361-6.05-4.017 1.227-1.642 2.646-3.242 4.255-4.576zm10.281 10.282l-1.741-1.74c.456-.279.874-.591 1.265-.927 1.227-1.642 2.646-3.242 4.255-4.576-1.227-1.642-2.646-3.242-4.255-4.576-2.455 2.413-5.783 3.57-9.059 3.382l-1.498-1.498c.947.074 1.905.115 2.848.115 2.757 0 5-2.243 5-5 0-.942-.041-1.9-.115-2.848l-1.498-1.498c2.955.939 5.186 2.407 6.984 4.242zm-7.797-7.797c.062.349.089.706.089 1.065 0 2.757 2.243 5 5 5 .359 0 .716-.027 1.065-.089l-1.433-1.433c-.227.032-.459.047-.699.047-1.654 0-3-1.346-3-3 0-.24.016-.473.046-.7zm9.73 9.731c2.91-1.127 5.119-3.355 6.984-6.242-2.685.797-5.094 2.84-7.031 6.195z"/></svg>
+                    </span>
+                </div>
+            </div>
+
+            <div class="password-requirements">
+                <h4>Password Requirements:</h4>
+                <ul>
+                    <li>At least 8 characters long</li>
+                    <li>At least one uppercase letter</li>
+                    <li>At least one lowercase letter</li>
+                    <li>At least one number</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+               <div class="password-wrapper">
+                    <input type="password" id="confirm_password" name="confirm_password" required autocomplete="current-password">
+                    <span class="toggle-password" id="togglePassword" tabindex="0" aria-label="Show password">
+                        <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 12c-2.757 0-5-2.243-5-5s2.243-5 5-5 5 2.243 5 5-2.243 5-5 5zm0-8c-1.654 0-3 1.346-3 3s1.346 3 3 3 3-1.346 3-3-1.346-3-3-3z"/></svg>
+                        <svg id="eyeClosed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M2.393 1.379l19.799 19.799-1.414 1.414-3.106-3.107c-1.436.75-3.043 1.201-4.672 1.201-7.633 0-11-7-11-7 1.455-2.956 4.495-6.624 9.016-7.511l-3.239-3.239 1.414-1.414zm6.123 6.123l-1.697-1.697c-2.685.797-5.094 2.84-7.031 6.195 1.455 2.956 4.495 6.624 9.016 7.511l-1.494-1.494c-2.458-.628-4.583-2.361-6.05-4.017 1.227-1.642 2.646-3.242 4.255-4.576zm10.281 10.282l-1.741-1.74c.456-.279.874-.591 1.265-.927 1.227-1.642 2.646-3.242 4.255-4.576-1.227-1.642-2.646-3.242-4.255-4.576-2.455 2.413-5.783 3.57-9.059 3.382l-1.498-1.498c.947.074 1.905.115 2.848.115 2.757 0 5-2.243 5-5 0-.942-.041-1.9-.115-2.848l-1.498-1.498c2.955.939 5.186 2.407 6.984 4.242zm-7.797-7.797c.062.349.089.706.089 1.065 0 2.757 2.243 5 5 5 .359 0 .716-.027 1.065-.089l-1.433-1.433c-.227.032-.459.047-.699.047-1.654 0-3-1.346-3-3 0-.24.016-.473.046-.7zm9.73 9.731c2.91-1.127 5.119-3.355 6.984-6.242-2.685.797-5.094 2.84-7.031 6.195z"/></svg>
+                    </span>
+                </div>
+
+            <div class="security-section">
+                <h3><i class="fas fa-shield-alt"></i> Security Questions</h3>
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    Please select and answer 3 security questions for account recovery
+                </p>
+
+                <div id="security-questions">
+                    <!-- Security questions will be loaded here -->
+                </div>
+            </div>
+
+            <button type="submit" class="register-btn" id="registerBtn">
+                <i class="fas fa-user-plus"></i> Create Account
+            </button>
+
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin"></i> Creating your account...
+            </div>
+        </form>
+
+        <div class="login-link">
+            <p>Already have an account? <a href="/auth/login">Sign in here</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Password show/hide logic
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeOpen = document.getElementById('eyeOpen');
+        const eyeClosed = document.getElementById('eyeClosed');
+        let isPasswordVisible = false;
+
+        togglePassword.addEventListener('click', function() {
+            isPasswordVisible = !isPasswordVisible;
+            passwordInput.type = isPasswordVisible ? 'text' : 'password';
+            togglePassword.classList.toggle('active', isPasswordVisible);
+            eyeOpen.style.display = isPasswordVisible ? 'none' : '';
+            eyeClosed.style.display = isPasswordVisible ? '' : 'none';
+        });
+
+        togglePassword.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter' || e.key === ' '){
+                togglePassword.click();
+                e.preventDefault();
+            }
+        });
+        let securityQuestions = [];
+
+        // Load security questions on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSecurityQuestions();
+        });
+
+        async function loadSecurityQuestions() {
+            try {
+                const response = await fetch('/auth/api/security-questions');
+                const data = await response.json();
+                
+                if (data.questions) {
+                    securityQuestions = data.questions;
+                    renderSecurityQuestions();
+                }
+            } catch (error) {
+                console.error('Error loading security questions:', error);
+                showAlert('Failed to load security questions', 'error');
+            }
+        }
+
+        function renderSecurityQuestions() {
+            const container = document.getElementById('security-questions');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                const questionGroup = document.createElement('div');
+                questionGroup.className = 'question-group';
+                questionGroup.innerHTML = `
+                    <label for="question_${i}">Security Question ${i + 1}</label>
+                    <select id="question_${i}" name="question_${i}" required onchange="updateAvailableQuestions()">
+                        <option value="">Select a question...</option>
+                        ${securityQuestions.map(q => `<option value="${q.id}">${q.question}</option>`).join('')}
+                    </select>
+                    <input type="text" id="answer_${i}" name="answer_${i}" placeholder="Your answer" required style="margin-top: 10px;">
+                `;
+                container.appendChild(questionGroup);
+            }
+        }
+
+        function updateAvailableQuestions() {
+            const selectedQuestions = [];
+            for (let i = 0; i < 3; i++) {
+                const select = document.getElementById(`question_${i}`);
+                if (select.value) {
+                    selectedQuestions.push(select.value);
+                }
+            }
+
+            // Update all selects to disable already selected questions
+            for (let i = 0; i < 3; i++) {
+                const select = document.getElementById(`question_${i}`);
+                const currentValue = select.value;
+                
+                // Clear and repopulate options
+                select.innerHTML = '<option value="">Select a question...</option>';
+                
+                securityQuestions.forEach(q => {
+                    const option = document.createElement('option');
+                    option.value = q.id;
+                    option.textContent = q.question;
+                    
+                    // Disable if already selected in another dropdown
+                    if (selectedQuestions.includes(q.id.toString()) && q.id.toString() !== currentValue) {
+                        option.disabled = true;
+                        option.style.color = '#ccc';
+                    }
+                    
+                    select.appendChild(option);
+                });
+                
+                // Restore current value
+                select.value = currentValue;
+            }
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const username = formData.get('username');
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirm_password');
+            
+            // Client-side validation
+            if (!username.endsWith('@faculty')) {
+                showAlert('Username must end with @faculty', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+            
+            // Validate password requirements
+            if (!validatePassword(password)) {
+                return;
+            }
+            
+            // Collect security questions and answers
+            const securityAnswers = [];
+            for (let i = 0; i < 3; i++) {
+                const questionId = document.getElementById(`question_${i}`).value;
+                const answer = document.getElementById(`answer_${i}`).value.trim();
+                
+                if (!questionId || !answer) {
+                    showAlert('Please answer all 3 security questions', 'error');
+                    return;
+                }
+                
+                securityAnswers.push({
+                    question_id: parseInt(questionId),
+                    answer: answer
+                });
+            }
+            
+            // Check for duplicate questions
+            const questionIds = securityAnswers.map(sa => sa.question_id);
+            if (new Set(questionIds).size !== 3) {
+                showAlert('Please select 3 different security questions', 'error');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('registerBtn').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        confirm_password: confirmPassword,
+                        security_answers: securityAnswers
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Account created successfully! You can now login.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/auth/login';
+                    }, 2000);
+                } else {
+                    showAlert(data.error || 'Registration failed', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                // Hide loading
+                document.getElementById('registerBtn').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+        
+        function validatePassword(password) {
+            if (password.length < 8) {
+                showAlert('Password must be at least 8 characters long', 'error');
+                return false;
+            }
+            if (!/[A-Z]/.test(password)) {
+                showAlert('Password must contain at least one uppercase letter', 'error');
+                return false;
+            }
+            if (!/[a-z]/.test(password)) {
+                showAlert('Password must contain at least one lowercase letter', 'error');
+                return false;
+            }
+            if (!/\d/.test(password)) {
+                showAlert('Password must contain at least one number', 'error');
+                return false;
+            }
+            return true;
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            
+            alertContainer.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertContainer.innerHTML = '';
+                }, 5000);
+            }
+        }
+    </script>
+</body>
+</html>

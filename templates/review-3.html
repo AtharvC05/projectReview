@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Filling Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
+</head>
+<body>
+     <a href="/auth/logout" class="logout-btn">Logout</a>
+  <div class="page-header">
+    <div class="header-center">
+        <h1>Project Review - III</h1>
+    </div>
+     <div class="menu-container">
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <div class="menu-dropdown" id="menuDropdown">
+            <!-- Database Management -->
+            <a href="/data-manager" class="menu-item">
+                <span class="icon">🗄️</span>
+                Database Manager
+            </a>
+            <a href="/scheduler" class="menu-item ">
+                <span class="icon">📅</span>
+                Review Scheduler
+            </a>
+            <a href="/attendance-dashboard" class="menu-item">
+                <span class="icon">🙋</span>
+                Attendance
+            </a>
+
+            <div class="menu-divider"></div>
+            
+            <!-- Review Pages -->
+            <a href="/review1" class="menu-item">
+                <span class="icon">🔍</span>
+                Review I - Scope
+            </a>
+            
+            <a href="/review2" class="menu-item">
+                <span class="icon">🎨</span>
+                Review II - Design
+            </a>
+            
+            <a href="/review3" class="menu-item current">
+                <span class="icon">⚙️</span>
+                Review III - Implementation
+            </a>
+            
+            <a href="/review4" class="menu-item">
+                <span class="icon">🧪</span>
+                Review IV - Testing
+            </a>
+            
+            <a href="/review5" class="menu-item">
+                <span class="icon">📊</span>
+                Review V - Final
+            </a>
+            
+            <div class="menu-divider"></div>
+            
+            <!-- Additional Options -->
+            <a href="/" class="menu-item">
+                <span class="icon">🏠</span>
+                Home
+            </a>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <!-- Your form goes here -->
+
+
+
+    <form id="form-data">
+        
+        <label for="group_id">Group ID:</label>
+        <input type="text" id="group_id" name="group_id" placeholder="eg.BIA-01" required autocomplete="off">
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+<div class="section">
+  <h3>ATTENDANCE</h3>
+  <div class="attendance-container">
+    <div class="attendance-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Present</th>
+          </tr>
+        </thead>
+        <tbody id="attendance-tbody">
+          <!-- Attendance rows will be populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+        <!-- New Section for Implementation Review -->
+        <div class="section">
+                <h3>IMPLEMENTATION (SOURCE CODE REVIEW CHECKLIST)</h3>
+                <!-- Questions 1-5 -->
+                <div class="question">
+                    <label>1. Does the code completely and correctly implement the design?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="q1-y" name="que_1.1" value="Y" required><label for="q1-y">Yes</label>
+                        <input type="radio" id="q1-n" name="que_1.1" value="N"><label for="q1-n">No</label>
+                        <input type="radio" id="q1-na" name="que_1.1" value="NA"><label for="q1-na">N/A</label>
+                        <input type="radio" id="q1-nc" name="que_1.1" value="NC"><label for="q1-nc">NC</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <label>2. Does the code comply with the Coding Standards?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="q2-y" name="que_1.2" value="Y" required><label for="q2-y">Yes</label>
+                        <input type="radio" id="q2-n" name="que_1.2" value="N"><label for="q2-n">No</label>
+                        <input type="radio" id="q2-na" name="que_1.2" value="NA"><label for="q2-na">N/A</label>
+                        <input type="radio" id="q2-nc" name="que_1.2" value="NC"><label for="q2-nc">NC</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <label>3. Is the code well-structured, consistent in style, and consistently formatted?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="q3-y" name="que_1.3" value="Y" required><label for="q3-y">Yes</label>
+                        <input type="radio" id="q3-n" name="que_1.3" value="N"><label for="q3-n">No</label>
+                        <input type="radio" id="q3-na" name="que_1.3" value="NA"><label for="q3-na">N/A</label>
+                        <input type="radio" id="q3-nc" name="que_1.3" value="NC"><label for="q3-nc">NC</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <label>4. Does the implementation match the design?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="q4-y" name="que_1.4" value="Y" required><label for="q4-y">Yes</label>
+                        <input type="radio" id="q4-n" name="que_1.4" value="N"><label for="q4-n">No</label>
+                        <input type="radio" id="q4-na" name="que_1.4" value="NA"><label for="q4-na">N/A</label>
+                        <input type="radio" id="q4-nc" name="que_1.4" value="NC"><label for="q4-nc">NC</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <label>5. Are all functions in the design coded?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="q5-y" name="que_1.5" value="Y" required><label for="q5-y">Yes</label>
+                        <input type="radio" id="q5-n" name="que_1.5" value="N"><label for="q5-n">No</label>
+                        <input type="radio" id="q5-na" name="que_1.5" value="NA"><label for="q5-na">N/A</label>
+                        <input type="radio" id="q5-nc" name="que_1.5" value="NC"><label for="q5-nc">NC</label>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h3>Documentation</h3>
+                <div class="question">
+                    <label>1. Is the code clearly and adequately documented?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="doc1-y" name="que_2.1" value="Y" required><label for="doc1-y">Yes</label>
+                        <input type="radio" id="doc1-n" name="que_2.1" value="N"><label for="doc1-n">No</label>
+                        <input type="radio" id="doc1-na" name="que_2.1" value="NA"><label for="doc1-na">N/A</label>
+                        <input type="radio" id="doc1-nc" name="que_2.1" value="NC"><label for="doc1-nc">NC</label>
+                    </div>
+                </div>
+                <div class="question">
+                    <label>2. Are all comments consistent with the code?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="doc2-y" name="que_2.2" value="Y" required><label for="doc2-y">Yes</label>
+                        <input type="radio" id="doc2-n" name="que_2.2" value="N"><label for="doc2-n">No</label>
+                        <input type="radio" id="doc2-na" name="que_2.2" value="NA"><label for="doc2-na">N/A</label>
+                        <input type="radio" id="doc2-nc" name="que_2.2" value="NC"><label for="doc2-nc">NC</label>
+                    </div>
+                </div>
+            </div>
+
+        <div class="table-responsive">
+            <h2 class="header">STUDENT PERFORMANCE EVALUATION</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2">Particulars</th>
+                        <th colspan="4">Marks (25M) Group Members</th>
+                    </tr>
+                    <tr>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Detailed study of Algorithm(s) / Model / Hardware specification (As applicable).</td>
+                        <td><input type="text" name="ds1" placeholder="Y/N" maxlength="1" pattern="[YNyn]" ></td>
+                        <td><input type="text" name="ds2" placeholder="Y/N" maxlength="1" pattern="[YNyn]" ></td>
+                        <td><input type="text" name="ds3" placeholder="Y/N" maxlength="1" pattern="[YNyn]"></td>
+                        <td><input type="text" name="ds4" placeholder="Y/N" maxlength="1" pattern="[YNyn]"></td>
+
+                    </tr>
+                    <tr>
+                        <td>2. Confirmation of Data set used (As applicable)</td>
+                    <td><input type="text" name="cd1" placeholder="Y/N" maxlength="1" pattern="[YNyn]" ></td>
+                    <td><input type="text" name="cd2" placeholder="Y/N" maxlength="1" pattern="[YNyn]" ></td>
+                    <td><input type="text" name="cd3" placeholder="Y/N" maxlength="1" pattern="[YNyn]" ></td>
+                    <td><input type="text" name="cd4" placeholder="Y/N" maxlength="1" pattern="[YNyn]" ></td>
+
+                    </tr>
+                    <tr>
+                        <td>3. 50% Implementation (10M)</td>
+                        <td><input type="number" name="f31" class="marks" data-member="1" max="10" min="0"></td>
+                        <td><input type="number" name="f32" class="marks" data-member="2"max="10" min="0"></td>
+                        <td><input type="number" name="f33" class="marks" data-member="3" max="10" min="0"></td>
+                        <td><input type="number" name="f34" class="marks" data-member="4"max="10" min="0"></td>
+
+                    </tr>
+                    <tr>
+                        <td>4. Partial results obtained (7M)</td>
+                        <td><input type="number" name="f42" class="marks" data-member="1" max="7" min="0"></td>
+                        <td><input type="number" name="f41" class="marks" data-member="2"max="7" min="0"></td>
+                        <td><input type="number" name="f43" class="marks" data-member="3"max="7" min="0"></td>
+                        <td><input type="number" name="f44" class="marks" data-member="4"max="7" min="0"></td>
+                    </tr>
+                    <tr>
+                        <td>5. Presentation skills (4M)</td>
+                        <td><input type="number" name="f51" class="marks" data-member="1" max="4" min="0"></td>
+                        <td><input type="number" name="f52" class="marks" data-member="2" max="4" min="0"></td>
+                        <td><input type="number" name="f53" class="marks" data-member="3" max="4" min="0"></td>
+                        <td><input type="number" name="f54" class="marks" data-member="4" max="4" min="0"></td>
+                    </tr>
+                    <tr>
+                        <td>6. Question and Answer (4M)</td>
+                        <td><input type="number" name="f61" class="marks" data-member="1" max="4" min="0"></td>
+                        <td><input type="number" name="f62" class="marks" data-member="2" max="4" min="0"></td>
+                        <td><input type="number" name="f63" class="marks" data-member="3" max="4" min="0"></td>
+                        <td><input type="number" name="f64" class="marks" data-member="4" max="4" min="0"></td>
+                    </tr>
+                    <tr>
+                        <td>7. Summarize the methodologies/Algorithms implemented / to be implemented</td>
+                        <td><input type="text" name="sum1" placeholder="Y/N"></td>
+                        <td><input type="text" name="sum2" placeholder="Y/N"></td>
+                        <td><input type="text" name="sum3" placeholder="Y/N"></td>
+                        <td><input type="text" name="sum4" placeholder="Y/N"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total (25M)</td>
+                        <td><input type="number" name="f81" class="total" readonly></td>
+                        <td><input type="number" name="f82" class="total" readonly></td>
+                        <td><input type="number" name="f83" class="total" readonly></td>
+                        <td><input type="number" name="f84" class="total" readonly></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+     <div class="comment-box">
+            <label for="comments">Comments:</label>
+            <textarea id="comments" name="c3" placeholder="Enter any additional comments here"></textarea>
+         </div>
+
+        <div class="button-group">
+            <button type="button" id="back-review" onclick="previousReview()">Back</button>
+            <button type="button" id="generate-pdf" onclick="submitForm()">Generate PDF</button>
+            <button type="button" id="next-review" onclick="nextReview()">Next Review</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Global variables to track state
+let currentMemberCount = 4;
+let isTableBuilding = false;
+
+// Fetch member count from database
+async function fetchMemberCount(groupId) {
+    if (!groupId) return 4;
+    
+    try {
+        console.log(`Fetching member count for group: ${groupId}`);
+        const response = await fetch(`/api/attendance/${groupId}/3`);
+        if (!response.ok) throw new Error(`Failed to fetch members: ${response.status}`);
+        
+        const data = await response.json();
+        const memberCount = data.members ? data.members.length : 4;
+        console.log(`Found ${memberCount} members for group ${groupId}`);
+        return memberCount;
+    } catch (error) {
+        console.error('Error fetching member count:', error);
+        return 4; // Default fallback
+    }
+}
+
+// Build performance table with dynamic member count
+async function buildPerformanceTable(groupId, forceMemberCount = null) {
+    if (isTableBuilding) {
+        console.log('Table is already being built, skipping...');
+        return;
+    }
+    
+    isTableBuilding = true;
+    
+    try {
+        const tableContainer = document.querySelector('.table-responsive table');
+        if (!tableContainer) {
+            console.error('Performance table not found');
+            return;
+        }
+
+        // Find thead, tbody, tfoot
+        let thead = tableContainer.querySelector('thead');
+        let tbody = tableContainer.querySelector('tbody');
+        let tfoot = tableContainer.querySelector('tfoot');
+
+        if (!thead || !tbody || !tfoot) {
+            console.error('Table structure elements not found');
+            return;
+        }
+
+        // Determine member count
+        let memberCount = forceMemberCount;
+        if (memberCount === null) {
+            memberCount = await fetchMemberCount(groupId);
+        }
+        
+        currentMemberCount = memberCount;
+        console.log(`Building Review III table for group ${groupId} with ${memberCount} members`);
+
+        // Build header - keep the existing structure but make it dynamic
+        thead.innerHTML = `
+            <tr>
+                <th rowspan="2">Particulars</th>
+                <th colspan="${memberCount}">Marks (25M) Group Members</th>
+            </tr>
+            <tr>
+                ${Array.from({length: memberCount}, (_, i) => `<th>${i + 1}</th>`).join('')}
+            </tr>
+        `;
+
+        // Build body with Review III specific questions
+        const questions = [
+            { 
+                text: "1. Detailed study of Algorithm(s) / Model / Hardware specification (As applicable).", 
+                type: "text", 
+                names: ["ds1", "ds2", "ds3", "ds4", "ds5"] 
+            },
+            { 
+                text: "2. Confirmation of Data set used (As applicable)", 
+                type: "text", 
+                names: ["cd1", "cd2", "cd3", "cd4", "cd5"] 
+            },
+            { 
+                text: "3. 50% Implementation (10M)", 
+                type: "number", 
+                max: 10, 
+                names: ["f31", "f32", "f33", "f34", "f35"] 
+            },
+            { 
+                text: "4. Partial results obtained (7M)", 
+                type: "number", 
+                max: 7, 
+                names: ["f42", "f41", "f43", "f44", "f45"] // Note: Keep original naming pattern
+            },
+            { 
+                text: "5. Presentation skills (4M)", 
+                type: "number", 
+                max: 4, 
+                names: ["f51", "f52", "f53", "f54", "f55"] 
+            },
+            { 
+                text: "6. Question and Answer (4M)", 
+                type: "number", 
+                max: 4, 
+                names: ["f61", "f62", "f63", "f64", "f65"] 
+            },
+            { 
+                text: "7. Summarize the methodologies/Algorithms implemented / to be implemented", 
+                type: "text", 
+                names: ["sum1", "sum2", "sum3", "sum4", "sum5"] 
+            }
+        ];
+
+        let tbodyHTML = '';
+        questions.forEach((q, qIndex) => {
+            let row = `<tr><td>${q.text}</td>`;
+            for (let i = 0; i < memberCount; i++) {
+                const fieldName = q.names[i];
+                if (q.type === "number") {
+                    row += `<td><input type="number" name="${fieldName}" class="marks" data-member="${i + 1}" max="${q.max}" min="0"></td>`;
+                } else {
+                    row += `<td><input type="text" name="${fieldName}" placeholder="Y/N" maxlength="1" pattern="[YNyn]"></td>`;
+                }
+            }
+            row += "</tr>";
+            tbodyHTML += row;
+        });
+        tbody.innerHTML = tbodyHTML;
+
+        // Build footer (totals) - Use existing naming pattern
+        let footerRow = `<tr><td>Total (25M)</td>`;
+        const totalNames = ["f81", "f82", "f83", "f84", "f85"];
+        for (let i = 0; i < memberCount; i++) {
+            footerRow += `<td><input type="number" name="${totalNames[i]}" class="total" readonly></td>`;
+        }
+        footerRow += "</tr>";
+        tfoot.innerHTML = footerRow;
+
+        // Setup event listeners after a short delay
+        setTimeout(() => {
+            attachTableEventListeners();
+            setupArrowNavigation();
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error building Review III table:', error);
+    } finally {
+        isTableBuilding = false;
+    }
+}
+
+// After building table, try to auto-fill from saved responses
+async function loadSavedResponses(groupId) {
+  try {
+    const response = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+    if (!response.ok) {
+      console.error(`❌ Failed to fetch responses for group ${groupId}`);
+      return;
+    }
+    const data = await response.json();
+    const responses = data.responses || {};
+    console.log("📥 Loaded saved responses:", responses);
+
+    let filled = 0;
+    for (const [fieldName, fieldValue] of Object.entries(responses)) {
+      const elements = document.querySelectorAll(`[name="${CSS.escape(fieldName)}"]`);
+      elements.forEach(el => {
+        if (el.type === "radio" || el.type === "checkbox") {
+          if (el.value === fieldValue) {
+            el.checked = true;
+            filled++;
+          }
+        } else {
+          el.value = fieldValue;
+          filled++;
+        }
+      });
+    }
+    console.log(`✅ Auto-filled ${filled} fields for group ${groupId}`);
+
+    if (typeof calculateTotals === "function") setTimeout(calculateTotals, 200);
+  } catch (err) {
+    console.error("❌ Error loading responses:", err);
+  }
+}
+
+
+// Attach event listeners to table inputs
+function attachTableEventListeners() {
+    const marks = document.querySelectorAll('.marks');
+    console.log(`Attaching listeners to ${marks.length} mark inputs`);
+    
+    marks.forEach(input => {
+        // Remove existing listeners first
+        input.removeEventListener('input', handleMarksInput);
+        input.removeEventListener('change', handleMarksChange);
+        
+        // Add new listeners
+        input.addEventListener('input', function() {
+            validateInput(this);
+            calculateTotals();
+        });
+    });
+}
+
+// Handle marks input events
+function handleMarksInput() {
+    calculateTotals();
+}
+
+// Handle marks change events
+function handleMarksChange() {
+    validateInput(this);
+    calculateTotals();
+}
+
+// Setup arrow key navigation for the performance table
+function setupArrowNavigation() {
+    const inputs = document.querySelectorAll(".table-responsive input[type='number'], .table-responsive input[type='text']");
+    console.log(`Setting up navigation for ${inputs.length} inputs`);
+    
+    // Remove existing listeners
+    inputs.forEach(input => {
+        input.removeEventListener('keydown', handleTableKeyNavigation);
+    });
+    
+    // Add navigation listeners
+    inputs.forEach(input => {
+        input.addEventListener('keydown', handleTableKeyNavigation);
+    });
+}
+
+// Handle keyboard navigation for performance table
+function handleTableKeyNavigation(e) {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    
+    const currentInput = e.target;
+    const table = currentInput.closest('.table-responsive table');
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    const tfoot = table.querySelector('tfoot');
+    const rows = [...tbody.querySelectorAll('tr'), ...tfoot.querySelectorAll('tr')];
+    
+    const currentRow = currentInput.closest('tr');
+    const currentRowIndex = rows.indexOf(currentRow);
+    const currentCellIndex = Array.from(currentRow.querySelectorAll('input')).indexOf(currentInput);
+    
+    let targetInput = null;
+    
+    switch (e.key) {
+        case 'ArrowUp':
+            if (currentRowIndex > 0) {
+                const targetRow = rows[currentRowIndex - 1];
+                const targetInputs = targetRow.querySelectorAll('input');
+                if (targetInputs[currentCellIndex]) {
+                    targetInput = targetInputs[currentCellIndex];
+                }
+            }
+            break;
+        case 'ArrowDown':
+            if (currentRowIndex < rows.length - 1) {
+                const targetRow = rows[currentRowIndex + 1];
+                const targetInputs = targetRow.querySelectorAll('input');
+                if (targetInputs[currentCellIndex]) {
+                    targetInput = targetInputs[currentCellIndex];
+                }
+            }
+            break;
+        case 'ArrowLeft':
+            if (currentCellIndex > 0) {
+                const targetInputs = currentRow.querySelectorAll('input');
+                targetInput = targetInputs[currentCellIndex - 1];
+            }
+            break;
+        case 'ArrowRight':
+            if (currentCellIndex < currentRow.querySelectorAll('input').length - 1) {
+                const targetInputs = currentRow.querySelectorAll('input');
+                targetInput = targetInputs[currentCellIndex + 1];
+            }
+            break;
+    }
+    
+    if (targetInput) {
+        targetInput.focus();
+        e.preventDefault();
+    }
+}
+
+// Calculate totals for all members - adapted for Review III structure
+function calculateTotals() {
+    console.log(`Calculating totals for ${currentMemberCount} members`);
+    
+    for (let i = 1; i <= currentMemberCount; i++) {
+        let total = 0;
+        let isValid = true;
+        
+        // Sum up numeric marks based on Review III structure
+        // f3i (10M), f4i (7M), f5i (4M), f6i (4M) where i is member number
+        const numericFields = [`f3${i}`, `f5${i}`, `f6${i}`];
+        
+        // Handle special f4 mapping (f42, f41, f43, f44, f45)
+        const f4FieldMap = { 1: 'f42', 2: 'f41', 3: 'f43', 4: 'f44', 5: 'f45' };
+        const f4Field = f4FieldMap[i];
+        if (f4Field) {
+            numericFields.push(f4Field);
+        }
+        
+        numericFields.forEach(fieldName => {
+            const input = document.querySelector(`input[name="${fieldName}"]`);
+            if (input && input.type === 'number') {
+                const value = parseFloat(input.value);
+                if (!isNaN(value) && value >= 0) {
+                    total += value;
+                } else if (input.value !== '') {
+                    isValid = false;
+                }
+            }
+        });
+        
+        const totalFieldName = `f8${i}`;
+        const totalField = document.querySelector(`input[name="${totalFieldName}"]`);
+        if (totalField) {
+            totalField.value = isValid && total > 0 ? total : '';
+            totalField.classList.toggle('error', !isValid || total > 25);
+        }
+    }
+}
+
+// Validate individual input
+function validateInput(input) {
+    if (input.type !== 'number') return true;
+    
+    const max = parseFloat(input.getAttribute('max')) || Infinity;
+    const min = parseFloat(input.getAttribute('min')) || 0;
+    const value = parseFloat(input.value);
+    
+    if (input.value === '') {
+        input.classList.remove('error');
+        return true;
+    }
+    
+    if (isNaN(value) || value < min) {
+        input.value = '';
+        input.classList.add('error');
+        return false;
+    }
+
+    if (value > max) {
+        input.value = max;
+        input.classList.add('error');
+        return false;
+    }
+    
+    input.classList.remove('error');
+    return true;
+}
+
+// Group ID change handler
+async function handleGroupIdChange() {
+    const groupIdInput = document.getElementById("group_id");
+    const gid = groupIdInput.value.trim();
+    
+    console.log(`Group ID changed to: ${gid}`);
+    
+    if (gid) {
+        // 1. Build table dynamically
+        await buildPerformanceTable(gid);
+
+        // 2. Load saved responses into the newly built inputs
+        await loadSavedResponses(gid);
+    } else {
+        await buildPerformanceTable("", 4);
+    }
+}
+
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing Review III performance table system...');
+    
+    const groupIdInput = document.getElementById("group_id");
+    if (groupIdInput) {
+        // Remove existing listeners
+        groupIdInput.removeEventListener('change', handleGroupIdChange);
+        groupIdInput.removeEventListener('blur', handleGroupIdChange);
+        
+        // Add new listeners
+        groupIdInput.addEventListener('change', handleGroupIdChange);
+        
+        // Build initial table
+        const initialGroupId = groupIdInput.value.trim();
+        if (initialGroupId) {
+            await buildPerformanceTable(initialGroupId);
+        } else {
+            await buildPerformanceTable("", 4);
+        }
+    } else {
+        console.error('Group ID input not found');
+        await buildPerformanceTable("", 4);
+    }
+});
+</script>
+     <script>
+        let menuOpen = false;
+
+        function toggleMenu() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const menuDropdown = document.getElementById('menuDropdown');
+            
+            menuOpen = !menuOpen;
+            
+            if (menuOpen) {
+                menuToggle.classList.add('active');
+                menuDropdown.classList.add('show');
+            } else {
+                menuToggle.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menuContainer = document.querySelector('.menu-container');
+            
+            if (!menuContainer.contains(event.target) && menuOpen) {
+                toggleMenu();
+            }
+        });
+
+        // Close menu when pressing Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && menuOpen) {
+                toggleMenu();
+            }
+        });
+
+        // Highlight current page
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('current');
+                }
+            });
+        });
+    </script>
+<script>
+class Review3AttendanceManagerEnhanced {
+    constructor() {
+        this.reviewNumber = 3;
+        this.groupIdInput = document.getElementById('group_id');
+        this.attendanceTableBody = document.getElementById('attendance-tbody');
+        this.membersData = [];
+        this.isLoading = false;
+        this.init();
+    }
+    
+    init() {
+        if (this.groupIdInput) {
+            this.groupIdInput.addEventListener('blur', () => this.loadAttendance());
+            this.groupIdInput.addEventListener('change', () => this.loadAttendance());
+        }
+        
+        if (this.groupIdInput && this.groupIdInput.value.trim()) {
+            setTimeout(() => this.loadAttendance(), 600);
+        }
+    }
+    
+    async loadAttendance() {
+        const groupId = this.groupIdInput.value.trim();
+        if (!groupId || this.isLoading) {
+            this.clearAttendanceTable();
+            return;
+        }
+        
+        this.isLoading = true;
+        
+        try {
+            console.log(`Loading attendance for group: ${groupId}`);
+            const response = await fetch(`/api/attendance/${groupId}/3`);
+            if (!response.ok) throw new Error(`Failed to fetch attendance: ${response.status}`);
+            
+            const data = await response.json();
+            this.membersData = data.members || [];
+            console.log(`Loaded ${this.membersData.length} members`);
+            
+            this.populateAttendanceTable();
+            
+            // Rebuild performance table after attendance is loaded
+            if (window.buildPerformanceTable && !window.isTableBuilding) {
+                await buildPerformanceTable(groupId, this.membersData.length);
+            }
+            
+        } catch (error) {
+            console.error('Error loading attendance:', error);
+            this.clearAttendanceTable();
+        } finally {
+            this.isLoading = false;
+        }
+    }
+    
+    populateAttendanceTable() {
+        if (!this.attendanceTableBody) return;
+        
+        this.attendanceTableBody.innerHTML = '';
+        
+        this.membersData.forEach((member, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${member.roll_no}</td>
+                <td>${member.name}</td>
+                <td>
+                    <input type="checkbox" 
+                           id="attendance_${index}" 
+                           name="attendance_${member.roll_no}" 
+                           data-roll-no="${member.roll_no}"
+                           data-member-index="${index + 1}"
+                           ${member.present ? 'checked' : ''}
+                           onchange="attendanceManagerEnhanced.handleAttendanceChange(this)">
+                    <label for="attendance_${index}"></label>
+                </td>
+            `;
+            this.attendanceTableBody.appendChild(row);
+        });
+        
+        setTimeout(() => this.applyInitialAttendance(), 300);
+    }
+    
+    clearAttendanceTable() {
+        if (this.attendanceTableBody) {
+            this.attendanceTableBody.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
+        }
+        this.membersData = [];
+    }
+    
+    handleAttendanceChange(checkbox) {
+        const memberIndex = parseInt(checkbox.dataset.memberIndex);
+        const isPresent = checkbox.checked;
+        
+        console.log(`Member ${memberIndex} attendance changed to: ${isPresent}`);
+        
+        setTimeout(() => {
+            this.updateMarksForAttendance(memberIndex, isPresent);
+            this.saveAttendance();
+            
+            if (typeof calculateTotals === 'function') {
+                setTimeout(() => calculateTotals(), 100);
+            }
+        }, 100);
+    }
+    
+    applyInitialAttendance() {
+        console.log('Applying initial attendance settings for Review III');
+        this.membersData.forEach((member, index) => {
+            if (!member.present) {
+                this.updateMarksForAttendance(index + 1, false);
+            }
+        });
+        
+        if (typeof calculateTotals === 'function') {
+            setTimeout(() => calculateTotals(), 200);
+        }
+    }
+    
+    updateMarksForAttendance(memberIndex, isPresent) {
+        console.log(`Updating Review III marks for member ${memberIndex}, present: ${isPresent}`);
+        
+        if (!isPresent) {
+            // Y/N fields in Review 3
+            [`ds${memberIndex}`, `cd${memberIndex}`, `sum${memberIndex}`].forEach(fieldName => {
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                if (input) {
+                    input.value = 'N';
+                    console.log(`Set ${fieldName} to N`);
+                }
+            });
+            
+            // Numeric fields with irregular pattern
+            const numericFields = [`f3${memberIndex}`, `f5${memberIndex}`, `f6${memberIndex}`];
+            
+            // Special f4 mapping: f42,f41,f43,f44,f45 for members 1,2,3,4,5
+            const f4FieldMap = { 1: 'f42', 2: 'f41', 3: 'f43', 4: 'f44', 5: 'f45' };
+            const f4Field = f4FieldMap[memberIndex];
+            if (f4Field) numericFields.push(f4Field);
+            
+            numericFields.forEach(fieldName => {
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                if (input && input.type === 'number') {
+                    input.value = '0';
+                    console.log(`Set ${fieldName} to 0`);
+                }
+            });
+        } else {
+            // Clear all fields when present
+            const allFields = [
+                `ds${memberIndex}`, `cd${memberIndex}`, `sum${memberIndex}`,
+                `f3${memberIndex}`, `f5${memberIndex}`, `f6${memberIndex}`
+            ];
+            
+            const f4FieldMap = { 1: 'f42', 2: 'f41', 3: 'f43', 4: 'f44', 5: 'f45' };
+            const f4Field = f4FieldMap[memberIndex];
+            if (f4Field) allFields.push(f4Field);
+            
+            allFields.forEach(fieldName => {
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                if (input) {
+                    input.value = '';
+                    console.log(`Cleared ${fieldName}`);
+                }
+            });
+        }
+    }
+    
+    async saveAttendance() {
+        const groupId = this.groupIdInput.value.trim();
+        if (!groupId) return;
+        
+        const attendanceData = {};
+        document.querySelectorAll('input[data-roll-no]').forEach(checkbox => {
+            attendanceData[checkbox.dataset.rollNo] = checkbox.checked;
+        });
+        
+        try {
+            await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                    review_num: 3,
+                    attendance: attendanceData
+                })
+            });
+            console.log('Review III attendance saved successfully');
+        } catch (error) {
+            console.error('Error saving Review III attendance:', error);
+        }
+    }
+}
+
+// Initialize enhanced attendance manager
+let attendanceManagerEnhanced;
+document.addEventListener('DOMContentLoaded', function() {
+    attendanceManagerEnhanced = new Review3AttendanceManagerEnhanced();
+});
+</script>
+
+<script>document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("form-data");
+  const groupIdInput = document.getElementById("group_id");
+
+  if (!form || !groupIdInput) {
+    console.error("❌ Required elements (#form-data or #group_id) not found");
+    return;
+  }
+
+  console.log("✅ Sheet 3 script initialized");
+
+  // ========== FORM CLEARING FUNCTION ==========
+  function clearFormFields() {
+    console.log("🧹 Clearing all form fields");
+    
+    // Clear all input types
+    form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+      input.checked = false;
+    });
+    
+    form.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], textarea, select').forEach(input => {
+      if (input.id !== 'group_id') { // Don't clear the group_id field itself
+        input.value = '';
+      }
+    });
+
+    // Trigger total calculations if available to reset calculated values
+    if (typeof calculateTotals === "function") {
+      calculateTotals();
+    }
+  }
+
+  // ========== AUTO FETCH ==========
+  groupIdInput.addEventListener("blur", async () => {
+    const groupId = groupIdInput.value.trim();
+    if (!groupId) return;
+
+    console.log(`🔍 Fetching data for group: ${groupId}`);
+    
+    // Clear form first to prevent old data from persisting
+    clearFormFields();
+
+    try {
+      const response = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+      if (!response.ok) {
+        console.error(`❌ Fetch failed: ${response.status}`);
+        return;
+      }
+      const data = await response.json();
+      const responses = data.responses || {};
+      
+      console.log("📥 Fetched responses:", responses);
+
+      if (Object.keys(responses).length > 0) {
+        let filledFields = 0;
+        for (const [name, value] of Object.entries(responses)) {
+          const elements = form.querySelectorAll(`[name="${CSS.escape(name)}"]`);
+          if (elements.length === 0) {
+            console.warn(`⚠️ Field not found for name: ${name}`);
+            continue;
+          }
+          elements.forEach(el => {
+            if (el.type === "radio" || el.type === "checkbox") {
+              if (el.value === value) {
+                el.checked = true;
+                filledFields++;
+              }
+            } else {
+              el.value = value;
+              filledFields++;
+            }
+          });
+        }
+        console.log(`✅ Auto-filled ${filledFields} fields`);
+        if (typeof calculateTotals === "function") calculateTotals();
+      } else {
+        console.log("ℹ️ No existing data found for group:", groupId);
+      }
+
+    } catch (error) {
+      console.error("❌ Error fetching responses:", error);
+    }
+  });
+
+  // ========== CLEAR FORM ON GROUP_ID CHANGE ==========
+  groupIdInput.addEventListener("input", function() {
+    // Cancel any pending save operations
+    clearTimeout(saveTimeout);
+    
+    // Clear form immediately when group_id changes
+    const currentGroupId = groupIdInput.value.trim();
+    if (currentGroupId) {
+      clearFormFields();
+    }
+  });
+
+  // ========== AUTO SAVE ==========
+  let saveTimeout;
+  async function saveFormData() {
+    const groupId = groupIdInput.value.trim();
+    if (!groupId) {
+      console.log("ℹ️ No group ID provided, skipping save");
+      return;
+    }
+
+    const formData = new FormData(form);
+    const payload = { group_id: groupId };
+    let count = 0;
+
+    for (const [name, value] of formData.entries()) {
+      if (value.trim()) {
+        payload[name] = value;
+        count++;
+      }
+    }
+
+    if (count === 0) {
+      console.log("ℹ️ No non-empty form values to save");
+      return;
+    }
+
+    console.log(`💾 Saving ${count} fields for group ${groupId}:`, payload);
+
+    try {
+      const response = await fetch("/api/save-response", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        console.error(`❌ Save failed with status: ${response.status}`);
+        return;
+      }
+      const result = await response.json();
+      console.log(`✅ Saved ${count} fields:`, result.message);
+    } catch (error) {
+      console.error("❌ Save error:", error);
+    }
+  }
+
+  function debounceSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveFormData, 1000);
+  }
+
+  // Hook input and change event for auto save (but exclude group_id field)
+  form.addEventListener("input", function(event) {
+    // Don't trigger auto-save when group_id field changes
+    if (event.target.id !== 'group_id') {
+      debounceSave();
+    }
+  });
+  
+  form.addEventListener("change", function(event) {
+    // Don't trigger auto-save when group_id field changes
+    if (event.target.id !== 'group_id') {
+      debounceSave();
+    }
+  });
+
+  // Save before PDF generation button clicked (if any)
+  const pdfBtn = document.getElementById("generate-pdf");
+  if (pdfBtn) {
+    const originalClick = pdfBtn.onclick;
+    pdfBtn.onclick = async function(event) {
+      const groupId = groupIdInput.value.trim();
+      if (groupId) {
+        await saveFormData();
+        console.log("💾 Data saved before PDF generation");
+      }
+      if (originalClick) return originalClick.call(this, event);
+    };
+  }
+
+  console.log("🚀 Sheet 3 save/load system ready");
+});
+</script>
+ 
+
+<script>
+    // Initialize form on load
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+        calculateTotals(); // Initial calculation
+    });
+
+    // Set up all event listeners
+    function setupEventListeners() {
+        // Marks calculation
+        document.querySelectorAll('.marks').forEach(input => {
+            input.addEventListener('input', handleMarkInput);
+        });
+
+        // Group ID auto-fill
+        const groupIdInput = document.getElementById('group_id');
+        if (groupIdInput) {
+            groupIdInput.addEventListener('change', fetchGroupDetails);
+        }
+    }
+
+
+    // Submit form to generate PDF
+    async function submitForm() {
+        // Validate form first
+        if (!validateForm()) return;
+
+        const form = document.getElementById('form-data');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            // Show loading state
+            const submitBtn = document.querySelector('button[onclick="submitForm()"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Generating PDF...';
+
+            const response = await fetch('/generate-pdf-review3', {  // Updated endpoint
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            // Handle PDF download
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Review-III_Form.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert(`Failed to generate PDF: ${error.message}`);
+        } finally {
+            // Reset button state
+            const submitBtn = document.querySelector('button[onclick="submitForm()"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Generate PDF';
+            }
+        }
+    }
+
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        
+        // Validate required fields
+        const requiredFields = ['group_id', 'date'];
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && !element.value.trim()) {
+                element.classList.add('error');
+                isValid = false;
+            } else if (element) {
+                element.classList.remove('error');
+            }
+        });
+
+        if (!isValid) {
+            alert('Please fill all required fields and ensure all marks are valid numbers');
+        }
+
+        return isValid;
+    }
+
+    // Fetch group details from backend
+    async function fetchGroupDetails() {
+        const groupId = document.getElementById('group_id').value.trim();
+        if (!groupId) return;
+
+        try {
+            const response = await fetch(`/fetch/${groupId}`);
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const data = await response.json();
+            populateForm(data);
+
+        } catch (error) {
+        }
+    }
+
+    // Populate form with fetched data
+    function populateForm(data) {
+        const fields = {
+            'project_title': data.project_title,
+            'guide_name': data.guide_name,
+            'mentor_name': data.mentor_name,
+            'mentor_email': data.mentor_email,
+            'mentor_mobile': data.mentor_mobile
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.value = value || '';
+        });
+
+        // Populate member details
+        if (data.members && Array.isArray(data.members)) {
+            data.members.forEach((member, index) => {
+                const fields = [
+                    `roll_no_${index + 1}`,
+                    `student_name_${index + 1}`,
+                    `contact_details_${index + 1}`
+                ];
+                
+                fields.forEach(field => {
+                    const element = document.getElementById(field);
+                    if (element) {
+                        element.value = member[field.split('_')[0]] || '';
+                    }
+                });
+            });
+        }
+    }
+
+    
+     // Navigation functions
+     function nextReview() {
+            saveFormData();
+            window.location.href = '/review4';
+        }
+    
+        function previousReview() {
+            saveFormData();
+            window.location.href = '/review2';
+        }
+
+    function saveFormData() {
+        const formData = new FormData(document.getElementById('form-data'));
+        const data = Object.fromEntries(formData.entries());
+        sessionStorage.setItem('review3_data', JSON.stringify(data));
+    }
+    // Header hide/show on scroll functionality
+let lastScrollTop = 0;
+let scrollThreshold = 5;
+let isHeaderVisible = true;
+
+function handleScroll() {
+    const header = document.querySelector('.page-header');
+    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
+        return;
+    }
+
+    // Hide header when scrolling down
+    if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
+        header.classList.add('hidden');
+        isHeaderVisible = false;
+    }
+    // Show header when scrolling up
+    else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
+        header.classList.remove('hidden');
+        isHeaderVisible = true;
+    }
+
+    // Optional: Add scrolled class for visual feedback
+    if (currentScrollTop > 80) {
+        header.classList.add('scrolled');
+    } else {
+        header.classList.remove('scrolled');
+    }
+
+    lastScrollTop = currentScrollTop;
+}
+
+// Throttling for better performance
+let scrollTimer = null;
+function throttledScroll() {
+    if (scrollTimer) return;
+    scrollTimer = setTimeout(() => {
+        handleScroll();
+        scrollTimer = null;
+    }, 10);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Your existing DOMContentLoaded code...
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+});
+
+</script>
+
+
+</body>
+</html>

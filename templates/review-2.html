@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review-II Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
+</head>
+<body>
+     <a href="/auth/logout" class="logout-btn">Logout</a>
+      <div class="page-header">
+    <div class="header-center">
+        <h1>Project Review - II</h1>
+    </div>
+     <div class="menu-container">
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <div class="menu-dropdown" id="menuDropdown">
+            <!-- Database Management -->
+            <a href="/data-manager" class="menu-item">
+                <span class="icon">🗄️</span>
+                Database Manager
+            </a>
+            <a href="/scheduler" class="menu-item ">
+                <span class="icon">📅</span>
+                Review Scheduler
+            </a>
+            <a href="/scheduler" class="menu-item ">
+                <span class="icon">🙋</span>
+                Attendance
+            </a>
+            <a href="/pdf_viewer" class="menu-item">
+                <span class="icon">📁</span>
+                Generated PDFs
+            </a>
+            <div class="menu-divider"></div>
+            
+            <!-- Review Pages -->
+            <a href="/review1" class="menu-item">
+                <span class="icon">🔍</span>
+                Review I - Scope
+            </a>
+            
+            <a href="/review2" class="menu-item current">
+                <span class="icon">🎨</span>
+                Review II - Design
+            </a>
+            
+            <a href="/review3" class="menu-item">
+                <span class="icon">⚙️</span>
+                Review III - Implementation
+            </a>
+            
+            <a href="/review4" class="menu-item">
+                <span class="icon">🧪</span>
+                Review IV - Testing
+            </a>
+            
+            <a href="/review5" class="menu-item">
+                <span class="icon">📊</span>
+                Review V - Final
+            </a>
+            
+            <div class="menu-divider"></div>
+            
+            <!-- Additional Options -->
+            <a href="/" class="menu-item">
+                <span class="icon">🏠</span>
+                Home
+            </a>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper">
+    <!-- Your form goes here -->
+
+    <form id="form-data">
+      
+        <label for="group_id">Group ID:</label>
+        <input type="text" id="group_id" name="group_id" required placeholder="eg: BIA-01" autocomplete="off">
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+
+        <div class="section">
+            <h3>ATTENDANCE</h3>
+            <div class="attendance-container">
+                <div class="attendance-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Present</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-tbody">
+                            <!-- Attendance rows will be populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>DESIGN</h3>
+
+            <!-- Questions 1-16 (Section 2.1) -->
+            <div class="question">
+                <label>1. Are requirements reflected in the system architecture?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des1-yes" name="2.1.1id" value="Y" required><label for="des1-yes">Yes</label>
+                    <input type="radio" id="des1-no" name="2.1.1id" value="N"><label for="des1-no">No</label>
+                    <input type="radio" id="des1-na" name="2.1.1id" value="NA"><label for="des1-na">N/A</label>
+                    <input type="radio" id="des1-nc" name="2.1.1id" value="NC"><label for="des1-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>2. Does the design support both project (product) and project goals?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des2-yes" name="2.1.2id" value="Y" required><label for="des2-yes">Yes</label>
+                    <input type="radio" id="des2-no" name="2.1.2id" value="N"><label for="des2-no">No</label>
+                    <input type="radio" id="des2-na" name="2.1.2id" value="NA"><label for="des2-na">N/A</label>
+                    <input type="radio" id="des2-nc" name="2.1.2id" value="NC"><label for="des2-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>3. Does the design address all the issues from the requirements?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des3-yes" name="2.1.3id" value="Y" required><label for="des3-yes">Yes</label>
+                    <input type="radio" id="des3-no" name="2.1.3id" value="N"><label for="des3-no">No</label>
+                    <input type="radio" id="des3-na" name="2.1.3id" value="NA"><label for="des3-na">N/A</label>
+                    <input type="radio" id="des3-nc" name="2.1.3id" value="NC"><label for="des3-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>4. Is effective modularity achieved and modules are functionally independent?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des4-yes" name="2.1.4id" value="Y" required><label for="des4-yes">Yes</label>
+                    <input type="radio" id="des4-no" name="2.1.4id" value="N"><label for="des4-no">No</label>
+                    <input type="radio" id="des4-na" name="2.1.4id" value="NA"><label for="des4-na">N/A</label>
+                    <input type="radio" id="des4-nc" name="2.1.4id" value="NC"><label for="des4-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>5. Are structural diagrams (Class, Object, etc.) well defined and understood?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des5-yes" name="2.1.5id" value="Y" required><label for="des5-yes">Yes</label>
+                    <input type="radio" id="des5-no" name="2.1.5id" value="N"><label for="des5-no">No</label>
+                    <input type="radio" id="des5-na" name="2.1.5id" value="NA"><label for="des5-na">N/A</label>
+                    <input type="radio" id="des5-nc" name="2.1.5id" value="NC"><label for="des5-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>6. Are all class associations clearly defined and understood? (Is it clear which classes provide which services)?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des6-yes" name="2.1.6id" value="Y" required><label for="des6-yes">Yes</label>
+                    <input type="radio" id="des6-no" name="2.1.6id" value="N"><label for="des6-no">No</label>
+                    <input type="radio" id="des6-na" name="2.1.6id" value="NA"><label for="des6-na">N/A</label>
+                    <input type="radio" id="des6-nc" name="2.1.6id" value="NC"><label for="des6-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>7. Are the classes in the class diagram clear? (What they represent in the architecture design document?)</label>
+                <div class="radio-group">
+                    <input type="radio" id="des7-yes" name="2.1.7id" value="Y" required><label for="des7-yes">Yes</label>
+                    <input type="radio" id="des7-no" name="2.1.7id" value="N"><label for="des7-no">No</label>
+                    <input type="radio" id="des7-na" name="2.1.7id" value="NA"><label for="des7-na">N/A</label>
+                    <input type="radio" id="des7-nc" name="2.1.7id" value="NC"><label for="des7-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>8. Is inheritance appropriately used?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des8-yes" name="2.1.8id" value="Y" required><label for="des8-yes">Yes</label>
+                    <input type="radio" id="des8-no" name="2.1.8id" value="N"><label for="des8-no">No</label>
+                    <input type="radio" id="des8-na" name="2.1.8id" value="NA"><label for="des8-na">N/A</label>
+                    <input type="radio" id="des8-nc" name="2.1.8id" value="NC"><label for="des8-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>9. Are the multiplicities in the use case diagram depicted in the class diagram?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des9-yes" name="2.1.9id" value="Y" required><label for="des9-yes">Yes</label>
+                    <input type="radio" id="des9-no" name="2.1.9id" value="N"><label for="des9-no">No</label>
+                    <input type="radio" id="des9-na" name="2.1.9id" value="NA"><label for="des9-na">N/A</label>
+                    <input type="radio" id="des9-nc" name="2.1.9id" value="NC"><label for="des9-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>10. Are behavioral diagrams (use case, sequence, activity, etc.) well defined and understood?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des10-yes" name="2.1.10id" value="Y" required><label for="des10-yes">Yes</label>
+                    <input type="radio" id="des10-no" name="2.1.10id" value="N"><label for="des10-no">No</label>
+                    <input type="radio" id="des10-na" name="2.1.10id" value="NA"><label for="des10-na">N/A</label>
+                    <input type="radio" id="des10-nc" name="2.1.10id" value="NC"><label for="des10-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>11. Is aggregation/containment (if used) clearly defined and understood?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des11-yes" name="2.1.11id" value="Y" required><label for="des11-yes">Yes</label>
+                    <input type="radio" id="des11-no" name="2.1.11id" value="N"><label for="des11-no">No</label>
+                    <input type="radio" id="des11-na" name="2.1.11id" value="NA"><label for="des11-na">N/A</label>
+                    <input type="radio" id="des11-nc" name="2.1.11id" value="NC"><label for="des11-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>12. Does each case have clearly defined actors and input/output?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des12-yes" name="2.1.12id" value="Y" required><label for="des12-yes">Yes</label>
+                    <input type="radio" id="des12-no" name="2.1.12id" value="N"><label for="des12-no">No</label>
+                    <input type="radio" id="des12-na" name="2.1.12id" value="NA"><label for="des12-na">N/A</label>
+                    <input type="radio" id="des12-nc" name="2.1.12id" value="NC"><label for="des12-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>13. Is all concurrent processing (if used) clearly understood and reflected in the sequence diagrams?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des13-yes" name="2.1.13id" value="Y" required><label for="des13-yes">Yes</label>
+                    <input type="radio" id="des13-no" name="2.1.13id" value="N"><label for="des13-no">No</label>
+                    <input type="radio" id="des13-na" name="2.1.13id" value="NA"><label for="des13-na">N/A</label>
+                    <input type="radio" id="des13-nc" name="2.1.13id" value="NC"><label for="des13-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>14. Are all objects used in sequence diagram?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des14-yes" name="2.1.14id" value="Y" required><label for="des14-yes">Yes</label>
+                    <input type="radio" id="des14-no" name="2.1.14id" value="N"><label for="des14-no">No</label>
+                    <input type="radio" id="des14-na" name="2.1.14id" value="NA"><label for="des14-na">N/A</label>
+                    <input type="radio" id="des14-nc" name="2.1.14id" value="NC"><label for="des14-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>15. Does the sequence diagram match class diagram?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des15-yes" name="2.1.15id" value="Y" required><label for="des15-yes">Yes</label>
+                    <input type="radio" id="des15-no" name="2.1.15id" value="N"><label for="des15-no">No</label>
+                    <input type="radio" id="des15-na" name="2.1.15id" value="NA"><label for="des15-na">N/A</label>
+                    <input type="radio" id="des15-nc" name="2.1.15id" value="NC"><label for="des15-nc">NC</label>
+                </div>
+            </div>
+
+            <div class="question">
+                <label>16. Are the symbols used in all diagrams correspond to UML standards?</label>
+                <div class="radio-group">
+                    <input type="radio" id="des16-yes" name="2.1.16id" value="Y" required><label for="des16-yes">Yes</label>
+                    <input type="radio" id="des16-no" name="2.1.16id" value="N"><label for="des16-no">No</label>
+                    <input type="radio" id="des16-na" name="2.1.16id" value="NA"><label for="des16-na">N/A</label>
+                    <input type="radio" id="des16-nc" name="2.1.16id" value="NC"><label for="des16-nc">NC</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Students' Contribution and Performance</h2>
+            <div class="table-responsive">
+                <table id="performance-table">
+                    <thead id="performance-thead"></thead>
+                    <tbody id="performance-tbody"></tbody>
+                    <tfoot id="performance-tfoot"></tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="comment-box">
+            <label for="comments">Comments:</label>
+            <textarea id="comments" name="c2" placeholder="Enter any additional comments here"></textarea>
+        </div>
+
+        <div class="button-group">
+            <button type="button" id="back-review" onclick="previousReview()">Back</button>
+            <button type="button" id="generate-pdf" onclick="submitForm()">Generate PDF</button>
+            <button type="button" id="next-review" onclick="nextReview()">Next Review</button>
+        </div>
+        
+    </form>
+</div>
+
+<script> 
+// Global variables to track state
+let currentMemberCount = 4;
+let isTableBuilding = false;
+
+// Fetch member count from database
+async function fetchMemberCount(groupId) {
+    if (!groupId) return 4;
+    
+    try {
+        console.log(`Fetching member count for group: ${groupId}`);
+        const response = await fetch(`/api/attendance/${groupId}/2`);
+        if (!response.ok) throw new Error(`Failed to fetch members: ${response.status}`);
+        
+        const data = await response.json();
+        const memberCount = data.members ? data.members.length : 4;
+        console.log(`Found ${memberCount} members for group ${groupId}`);
+        return memberCount;
+    } catch (error) {
+        console.error('Error fetching member count:', error);
+        return 4; // Default fallback
+    }
+}
+
+// Build performance table with dynamic member count
+async function buildPerformanceTable(groupId, forceMemberCount = null) {
+    if (isTableBuilding) {
+        console.log('Table is already being built, skipping...');
+        return;
+    }
+    
+    isTableBuilding = true;
+    
+    try {
+        const thead = document.getElementById("performance-thead");
+        const tbody = document.getElementById("performance-tbody");
+        const tfoot = document.getElementById("performance-tfoot");
+
+        if (!thead || !tbody || !tfoot) {
+            console.error('Table elements not found');
+            return;
+        }
+
+        // Determine member count
+        let memberCount = forceMemberCount;
+        if (memberCount === null) {
+            memberCount = await fetchMemberCount(groupId);
+        }
+        
+        currentMemberCount = memberCount;
+        console.log(`Building table for group ${groupId} with ${memberCount} members`);
+
+        // Clear existing content
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+        tfoot.innerHTML = "";
+
+        // Build header
+        const headerRow1 = `<tr>
+            <th rowspan="2">Particulars</th>
+            <th colspan="${memberCount}">Marks (25M) Group Members</th>
+        </tr>`;
+        
+        let headerRow2 = "<tr>";
+        for (let i = 1; i <= memberCount; i++) {
+            headerRow2 += `<th>Member ${i}</th>`;
+        }
+        headerRow2 += "</tr>";
+        
+        thead.innerHTML = headerRow1 + headerRow2;
+
+        // Build body with questions
+        const questions = [
+            { text: "1. System Architecture & Literature Survey (Review-I)", type: "text", placeholder: "Y/N" },
+            { text: "2. Project Design (5M)", type: "number", max: 5 },
+            { text: "3. Methodology /Algorithms and Project Features (5M)", type: "number", max: 5 },
+            { text: "4. Project Planning (2M)", type: "number", max: 2 },
+            { text: "5. Basic details of Implementation (5M)", type: "number", max: 5 },
+            { text: "6. Presentation Skills (4M)", type: "number", max: 4 },
+            { text: "7. Question and Answer (4M)", type: "number", max: 4 },
+            { text: "8. Summarization of ultimate findings of the Project", type: "text", placeholder: "Y/N" }
+        ];
+
+        questions.forEach((q, qIndex) => {
+            let row = `<tr><td>${q.text}</td>`;
+            for (let i = 1; i <= memberCount; i++) {
+                const fieldName = `2.${i}.${qIndex + 1}`;
+                if (q.type === "number") {
+                    row += `<td><input type="number" name="${fieldName}" max="${q.max}" min="0" class="marks" data-member="${i}" data-max="${q.max}"></td>`;
+                } else {
+                    row += `<td><input type="text" name="${fieldName}" placeholder="${q.placeholder}"></td>`;
+                }
+            }
+            row += "</tr>";
+            tbody.innerHTML += row;
+        });
+
+        // Build footer (totals)
+        let footerRow = `<tr><td><strong>Total (25M)</strong></td>`;
+        for (let i = 1; i <= memberCount; i++) {
+            footerRow += `<td><input type="number" name="2.${i}.s1" class="total" readonly></td>`;
+        }
+        footerRow += "</tr>";
+        tfoot.innerHTML = footerRow;
+
+        // Setup event listeners after a short delay
+        setTimeout(() => {
+            attachTableEventListeners();
+            setupArrowNavigation();
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error building table:', error);
+    } finally {
+        isTableBuilding = false;
+    }
+}
+
+// Attach event listeners to table inputs
+function attachTableEventListeners() {
+    const marks = document.querySelectorAll('.marks');
+    console.log(`Attaching listeners to ${marks.length} mark inputs`);
+    
+    marks.forEach(input => {
+        // Remove existing listeners first
+        input.removeEventListener('input', handleMarksInput);
+        input.removeEventListener('change', handleMarksChange);
+        
+        // Add new listeners
+        input.addEventListener('input', function() {
+    validateInput(this);
+    calculateTotals();
+});
+
+    });
+}
+
+// Handle marks input events
+function handleMarksInput() {
+    calculateTotals();
+}
+
+// Handle marks change events
+function handleMarksChange() {
+    validateInput(this);
+    calculateTotals();
+}
+
+// Setup arrow key navigation
+function setupArrowNavigation() {
+    const inputs = document.querySelectorAll("#performance-table input[type='number'], #performance-table input[type='text']");
+    console.log(`Setting up navigation for ${inputs.length} inputs`);
+    
+    // Remove existing listeners
+    inputs.forEach(input => {
+        input.removeEventListener('keydown', handleKeyNavigation);
+    });
+    
+    // Add navigation listeners
+    inputs.forEach(input => {
+        input.addEventListener('keydown', handleKeyNavigation);
+    });
+}
+
+// Handle keyboard navigation
+function handleKeyNavigation(e) {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    
+    const currentInput = e.target;
+    const allInputs = Array.from(document.querySelectorAll("#performance-table input"));
+    const currentIndex = allInputs.indexOf(currentInput);
+    
+    if (currentIndex === -1) return;
+    
+    const tbody = document.querySelector('#performance-table tbody');
+    const tfoot = document.querySelector('#performance-table tfoot');
+    const rows = [...tbody.querySelectorAll('tr'), ...tfoot.querySelectorAll('tr')];
+    
+    const currentRow = currentInput.closest('tr');
+    const currentRowIndex = rows.indexOf(currentRow);
+    const currentCellIndex = Array.from(currentRow.querySelectorAll('input')).indexOf(currentInput);
+    
+    let targetInput = null;
+    
+    switch (e.key) {
+        case 'ArrowUp':
+            if (currentRowIndex > 0) {
+                const targetRow = rows[currentRowIndex - 1];
+                const targetInputs = targetRow.querySelectorAll('input');
+                if (targetInputs[currentCellIndex]) {
+                    targetInput = targetInputs[currentCellIndex];
+                }
+            }
+            break;
+        case 'ArrowDown':
+            if (currentRowIndex < rows.length - 1) {
+                const targetRow = rows[currentRowIndex + 1];
+                const targetInputs = targetRow.querySelectorAll('input');
+                if (targetInputs[currentCellIndex]) {
+                    targetInput = targetInputs[currentCellIndex];
+                }
+            }
+            break;
+        case 'ArrowLeft':
+            if (currentCellIndex > 0) {
+                const targetInputs = currentRow.querySelectorAll('input');
+                targetInput = targetInputs[currentCellIndex - 1];
+            }
+            break;
+        case 'ArrowRight':
+            if (currentCellIndex < currentRow.querySelectorAll('input').length - 1) {
+                const targetInputs = currentRow.querySelectorAll('input');
+                targetInput = targetInputs[currentCellIndex + 1];
+            }
+            break;
+    }
+    
+    if (targetInput) {
+        targetInput.focus();
+        e.preventDefault();
+    }
+}
+
+// Calculate totals for all members
+function calculateTotals() {
+    console.log(`Calculating totals for ${currentMemberCount} members`);
+    
+    for (let i = 1; i <= currentMemberCount; i++) {
+        let total = 0;
+        let isValid = true;
+        
+        // Sum up numeric marks (questions 2-7)
+        [2, 3, 4, 5, 6, 7].forEach(qNum => {
+            const input = document.querySelector(`input[name="2.${i}.${qNum}"]`);
+            if (input && input.type === 'number') {
+                const value = parseFloat(input.value);
+                if (!isNaN(value) && value >= 0) {
+                    total += value;
+                } else if (input.value !== '') {
+                    isValid = false;
+                }
+            }
+        });
+        
+        const totalField = document.querySelector(`input[name="2.${i}.s1"]`);
+        if (totalField) {
+            totalField.value = isValid && total > 0 ? total : '';
+            totalField.classList.toggle('error', !isValid || total > 25);
+        }
+    }
+}
+
+// Validate individual input
+function validateInput(input) {
+    if (input.type !== 'number') return true;
+    
+    const max = parseFloat(input.getAttribute('max')) || Infinity;
+    const min = parseFloat(input.getAttribute('min')) || 0;
+    const value = parseFloat(input.value);
+    
+    if (input.value === '') {
+        input.classList.remove('error');
+        return true;
+    }
+    
+    if (input.value === '') {
+    input.classList.remove('error');
+    return true;
+}
+
+if (isNaN(value) || value < min) {
+    input.value = '';
+    input.classList.add('error');
+    return false;
+}
+
+if (value > max) {
+    input.value = max;  // 🔹 clamp to max marks
+    input.classList.add('error'); // optional: highlight
+    return false;
+}
+
+input.classList.remove('error');
+return true;
+
+    
+    input.classList.remove('error');
+    return true;
+}
+
+// Group ID change handler
+async function handleGroupIdChange() {
+    const groupIdInput = document.getElementById("group_id");
+    const gid = groupIdInput.value.trim();
+    
+    console.log(`Group ID changed to: ${gid}`);
+    
+    if (gid) {
+        await buildPerformanceTable(gid);
+    } else {
+        await buildPerformanceTable("", 4);
+    }
+}
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing performance table system...');
+    
+    const groupIdInput = document.getElementById("group_id");
+    if (groupIdInput) {
+        // Remove existing listeners
+        groupIdInput.removeEventListener('change', handleGroupIdChange);
+        groupIdInput.removeEventListener('blur', handleGroupIdChange);
+        
+        // Add new listeners
+        groupIdInput.addEventListener('change', handleGroupIdChange);
+        
+        // Build initial table
+        const initialGroupId = groupIdInput.value.trim();
+        if (initialGroupId) {
+            await buildPerformanceTable(initialGroupId);
+        } else {
+            await buildPerformanceTable("", 4);
+        }
+    } else {
+        console.error('Group ID input not found');
+        await buildPerformanceTable("", 4);
+    }
+});
+</script>
+
+<script>
+// Enhanced attendance manager with better integration
+class Review2AttendanceManager {
+    constructor() {
+        this.reviewNumber = 2;
+        this.groupIdInput = document.getElementById('group_id');
+        this.attendanceTableBody = document.getElementById('attendance-tbody');
+        this.membersData = [];
+        this.isLoading = false;
+        this.init();
+    }
+    
+    init() {
+        if (this.groupIdInput) {
+            this.groupIdInput.addEventListener('blur', () => this.loadAttendance());
+            this.groupIdInput.addEventListener('change', () => this.loadAttendance());
+        }
+        
+        // Load initial attendance if group ID exists
+        if (this.groupIdInput && this.groupIdInput.value.trim()) {
+            setTimeout(() => this.loadAttendance(), 600);
+        }
+    }
+    
+    async loadAttendance() {
+        const groupId = this.groupIdInput.value.trim();
+        if (!groupId || this.isLoading) {
+            this.clearAttendanceTable();
+            return;
+        }
+        
+        this.isLoading = true;
+        
+        try {
+            console.log(`Loading attendance for group: ${groupId}`);
+            const response = await fetch(`/api/attendance/${groupId}/2`);
+            if (!response.ok) throw new Error(`Failed to fetch attendance: ${response.status}`);
+            
+            const data = await response.json();
+            this.membersData = data.members || [];
+            console.log(`Loaded ${this.membersData.length} members`);
+            
+            this.populateAttendanceTable();
+            
+            // Rebuild performance table after attendance is loaded
+            if (window.buildPerformanceTable && !window.isTableBuilding) {
+    await buildPerformanceTable(groupId, this.membersData.length);
+}
+
+            
+        } catch (error) {
+            console.error('Error loading attendance:', error);
+            this.clearAttendanceTable();
+        } finally {
+            this.isLoading = false;
+        }
+    }
+    
+    populateAttendanceTable() {
+        if (!this.attendanceTableBody) return;
+        
+        this.attendanceTableBody.innerHTML = '';
+        
+        this.membersData.forEach((member, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${member.roll_no}</td>
+                <td>${member.name}</td>
+                <td>
+                    <input type="checkbox" 
+                           id="attendance_${index}" 
+                           name="attendance_${member.roll_no}" 
+                           data-roll-no="${member.roll_no}"
+                           data-member-index="${index + 1}"
+                           ${member.present ? 'checked' : ''}
+                           onchange="attendanceManager.handleAttendanceChange(this)">
+                    <label for="attendance_${index}"></label>
+                </td>
+            `;
+            this.attendanceTableBody.appendChild(row);
+        });
+        
+        // Apply initial attendance after table is built
+        setTimeout(() => this.applyInitialAttendance(), 300);
+    }
+    
+    clearAttendanceTable() {
+        if (this.attendanceTableBody) {
+            this.attendanceTableBody.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
+        }
+        this.membersData = [];
+    }
+    
+    handleAttendanceChange(checkbox) {
+        const memberIndex = parseInt(checkbox.dataset.memberIndex);
+        const isPresent = checkbox.checked;
+        
+        console.log(`Member ${memberIndex} attendance changed to: ${isPresent}`);
+        
+        // Wait for performance table to be ready
+        setTimeout(() => {
+            this.updateMarksForAttendance(memberIndex, isPresent);
+            this.saveAttendance();
+            
+            if (typeof calculateTotals === 'function') {
+                setTimeout(() => calculateTotals(), 100);
+            }
+        }, 100);
+    }
+    
+    applyInitialAttendance() {
+        console.log('Applying initial attendance settings');
+        this.membersData.forEach((member, index) => {
+            if (!member.present) {
+                this.updateMarksForAttendance(index + 1, false);
+            }
+        });
+        
+        if (typeof calculateTotals === 'function') {
+            setTimeout(() => calculateTotals(), 200);
+        }
+    }
+    
+    updateMarksForAttendance(memberIndex, isPresent) {
+        console.log(`Updating marks for member ${memberIndex}, present: ${isPresent}`);
+        
+        if (!isPresent) {
+            // Set Y/N fields to 'N'
+            [`2.${memberIndex}.1`, `2.${memberIndex}.8`].forEach(fieldName => {
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                if (input) {
+                    input.value = 'N';
+                    console.log(`Set ${fieldName} to N`);
+                }
+            });
+            
+            // Set numeric fields to '0'
+            [2, 3, 4, 5, 6, 7].forEach(fieldNum => {
+                const fieldName = `2.${memberIndex}.${fieldNum}`;
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                if (input && input.type === 'number') {
+                    input.value = '0';
+                    console.log(`Set ${fieldName} to 0`);
+                }
+            });
+        } else {
+            // Clear all fields when present
+            [1, 2, 3, 4, 5, 6, 7, 8].forEach(fieldNum => {
+                const fieldName = `2.${memberIndex}.${fieldNum}`;
+                const input = document.querySelector(`input[name="${fieldName}"]`);
+                if (input) {
+                    input.value = '';
+                    console.log(`Cleared ${fieldName}`);
+                }
+            });
+        }
+    }
+    
+    async saveAttendance() {
+        const groupId = this.groupIdInput.value.trim();
+        if (!groupId) return;
+        
+        const attendanceData = {};
+        document.querySelectorAll('input[data-roll-no]').forEach(checkbox => {
+            attendanceData[checkbox.dataset.rollNo] = checkbox.checked;
+        });
+        
+        try {
+            await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                    review_num: 2,
+                    attendance: attendanceData
+                })
+            });
+            console.log('Attendance saved successfully');
+        } catch (error) {
+            console.error('Error saving attendance:', error);
+        }
+    }
+}
+
+// Initialize attendance manager
+let attendanceManager;
+document.addEventListener('DOMContentLoaded', function() {
+    attendanceManager = new Review2AttendanceManager();
+});
+</script>
+
+<script>
+// Form data management with improved coordination
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("#form-data");
+    const groupIdInput = document.querySelector("#group_id");
+
+    if (!form || !groupIdInput) {
+        console.error("❌ Required elements not found!");
+        return;
+    }
+
+    console.log("✅ Form management initialized");
+
+    let saveTimeout;
+    let isLoadingData = false;
+
+    // Clear form fields
+    function clearFormFields() {
+        if (isLoadingData) return; // Don't clear while loading
+        
+        console.log("🧹 Clearing form fields");
+        
+        form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+            if (!input.hasAttribute('data-roll-no')) { // Don't clear attendance checkboxes
+                input.checked = false;
+            }
+        });
+        
+        form.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(input => {
+            if (input.id !== 'group_id' && !input.classList.contains('total')) {
+                input.value = '';
+            }
+        });
+
+        if (typeof calculateTotals === "function") {
+            setTimeout(() => calculateTotals(), 100);
+        }
+    }
+
+    // Auto-fetch data when group ID changes
+    groupIdInput.addEventListener("blur", async () => {
+        const groupId = groupIdInput.value.trim();
+        if (!groupId || isLoadingData) return;
+
+        console.log(`🔍 Fetching data for group: ${groupId}`);
+        isLoadingData = true;
+        
+        clearFormFields();
+
+        try {
+            const response = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+            
+            if (!response.ok) {
+                console.error(`❌ Fetch failed: ${response.status}`);
+                return;
+            }
+            
+            const data = await response.json();
+            console.log("📥 Fetched responses:", data.responses);
+
+            if (data.responses && Object.keys(data.responses).length > 0) {
+                // Wait for table to be built
+                setTimeout(() => {
+                    let filled = 0;
+                    for (const [fieldName, fieldValue] of Object.entries(data.responses)) {
+                        const elements = form.querySelectorAll(`[name="${CSS.escape(fieldName)}"]`);
+                        
+                        elements.forEach(element => {
+                            if (element.type === "radio" || element.type === "checkbox") {
+                                if (element.value === fieldValue) {
+                                    element.checked = true;
+                                    filled++;
+                                }
+                            } else {
+                                element.value = fieldValue;
+                                filled++;
+                            }
+                        });
+                    }
+                    
+                    console.log(`✅ Auto-filled ${filled} fields`);
+                    
+                    if (typeof calculateTotals === "function") {
+                        setTimeout(() => calculateTotals(), 100);
+                    }
+                }, 500);
+            } else {
+                console.log("ℹ️ No existing data found for group:", groupId);
+            }
+        } catch (error) {
+            console.error("❌ Fetch error:", error);
+        } finally {
+            isLoadingData = false;
+        }
+    });
+
+    // Clear form when group ID changes
+    groupIdInput.addEventListener("input", function() {
+        clearTimeout(saveTimeout);
+        
+        if (!isLoadingData) {
+            clearFormFields();
+        }
+    });
+
+    // Auto-save function
+    async function saveFormData() {
+        const groupId = groupIdInput.value.trim();
+        if (!groupId || isLoadingData) {
+            console.log("ℹ️ Cannot save - no group ID or loading data");
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = { group_id: groupId };
+        
+        let fieldCount = 0;
+        for (const [name, value] of formData.entries()) {
+            if (value.trim()) {
+                payload[name] = value;
+                fieldCount++;
+            }
+        }
+
+        if (fieldCount <= 1) { // Only group_id
+            console.log("ℹ️ No data to save");
+            return;
+        }
+
+        console.log(`💾 Saving ${fieldCount} fields`);
+
+        try {
+            const response = await fetch("/api/save-response", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                console.error(`❌ Save failed: ${response.status}`);
+                return;
+            }
+            
+            const result = await response.json();
+            console.log("✅ Saved:", result.message);
+            
+        } catch (error) {
+            console.error("❌ Save error:", error);
+        }
+    }
+
+    // Debounced save
+    function triggerSave() {
+        if (isLoadingData) return;
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveFormData, 1000);
+    }
+
+    // Listen for form changes
+    form.addEventListener("input", function(event) {
+        if (event.target.id !== 'group_id' && !event.target.hasAttribute('data-roll-no')) {
+            triggerSave();
+        }
+    });
+    
+    form.addEventListener("change", function(event) {
+        if (event.target.id !== 'group_id' && !event.target.hasAttribute('data-roll-no')) {
+            triggerSave();
+        }
+    });
+
+    // Save before PDF generation
+    const pdfButton = document.querySelector("#generate-pdf");
+    if (pdfButton) {
+        pdfButton.addEventListener('click', async function(event) {
+            const groupId = groupIdInput.value.trim();
+            if (groupId && !isLoadingData) {
+                await saveFormData();
+                console.log("💾 Data saved before PDF generation");
+            }
+        });
+    }
+
+    console.log("🚀 Form management ready");
+});
+</script>
+
+<script>
+// Rest of the utility functions remain the same
+function validateForm() {
+    let isValid = true;
+    const requiredFields = ['group_id', 'date'];
+    
+    requiredFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && !element.value.trim()) {
+            element.classList.add('error');
+            isValid = false;
+        } else if (element) {
+            element.classList.remove('error');
+        }
+    });
+
+    if (!isValid) {
+        alert('Please fill all required fields');
+    }
+
+    return isValid;
+}
+
+async function submitForm() {
+    if (!validateForm()) return;
+
+    try {
+        const submitBtn = document.getElementById('generate-pdf');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Generating PDF...';
+
+        const formData = new FormData(document.getElementById('form-data'));
+        const response = await fetch('/generate-pdf-review2', {
+            method: 'POST',
+            body: JSON.stringify(Object.fromEntries(formData)),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Review-II_Form.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+        alert(`Failed to generate PDF: ${error.message}`);
+    } finally {
+        const submitBtn = document.getElementById('generate-pdf');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Generate PDF';
+        }
+    }
+}
+
+function nextReview() {
+    const formData = new FormData(document.getElementById('form-data'));
+    const data = Object.fromEntries(formData.entries());
+    sessionStorage.setItem('review2_data', JSON.stringify(data));
+    window.location.href = '/review3';
+}
+
+function previousReview() {
+    const formData = new FormData(document.getElementById('form-data'));
+    const data = Object.fromEntries(formData.entries());
+    sessionStorage.setItem('review2_data', JSON.stringify(data));
+    window.location.href = '/review1';
+}
+
+// Menu and header functionality
+let menuOpen = false;
+
+function toggleMenu() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const menuDropdown = document.getElementById('menuDropdown');
+    
+    menuOpen = !menuOpen;
+    
+    if (menuOpen) {
+        menuToggle.classList.add('active');
+        menuDropdown.classList.add('show');
+    } else {
+        menuToggle.classList.remove('active');
+        menuDropdown.classList.remove('show');
+    }
+}
+
+document.addEventListener('click', function(event) {
+    const menuContainer = document.querySelector('.menu-container');
+    
+    if (!menuContainer.contains(event.target) && menuOpen) {
+        toggleMenu();
+    }
+});
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && menuOpen) {
+        toggleMenu();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const menuItems = document.querySelectorAll('.menu-item');
+    
+    menuItems.forEach(item => {
+        if (item.getAttribute('href') === currentPath) {
+            item.classList.add('current');
+        }
+    });
+});
+
+// Header scroll functionality
+let lastScrollTop = 0;
+let scrollThreshold = 5;
+let isHeaderVisible = true;
+
+function handleScroll() {
+    const header = document.querySelector('.page-header');
+    if (!header) return;
+    
+    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
+        return;
+    }
+
+    if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
+        header.classList.add('hidden');
+        isHeaderVisible = false;
+    } else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
+        header.classList.remove('hidden');
+        isHeaderVisible = true;
+    }
+
+    if (currentScrollTop > 80) {
+        header.classList.add('scrolled');
+    } else {
+        header.classList.remove('scrolled');
+    }
+
+    lastScrollTop = currentScrollTop;
+}
+
+let scrollTimer = null;
+function throttledScroll() {
+    if (scrollTimer) return;
+    scrollTimer = setTimeout(() => {
+        handleScroll();
+        scrollTimer = null;
+    }, 10);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review-I Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
+</head>
+<body>
+    <!-- Fixed Header with Centered Title and Right-Aligned Button -->
+      <a href="/auth/logout" class="logout-btn">Logout</a>
+    <div class="page-header">
+        <div class="header-left"></div>
+        <div class="header-center">
+            <h1>Project Review - I</h1>
+        </div>
+        <div class="menu-container">
+        <button class="menu-toggle" onclick="toggleMenu()">
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+            <span class="menu-line"></span>
+        </button>
+        
+        <div class="menu-dropdown" id="menuDropdown">
+            <!-- Database Management -->
+            <a href="/data-manager" class="menu-item">
+                <span class="icon">🗄️</span>
+                Database Manager
+            </a>
+            <a href="/scheduler" class="menu-item ">
+                <span class="icon">📅</span>
+                Review Scheduler
+            </a>
+            <a href="/attendance-dashboard" class="menu-item">
+                <span class="icon">🙋</span>
+                Attendance
+            </a>
+            <a href="/pdf_viewer" class="menu-item">
+                <span class="icon">📄</span>
+                Genrated PDFs
+            </a>
+            <div class="menu-divider"></div>
+            
+            <!-- Review Pages -->
+            <a href="/review1" class="menu-item current">
+                <span class="icon">📋</span>
+                Review I - Scope
+            </a>
+            
+            <a href="/review2" class="menu-item">
+                <span class="icon">🎨</span>
+                Review II - Design
+            </a>
+            
+            <a href="/review3" class="menu-item ">
+                <span class="icon">⚙️</span>
+                Review III - Implementation
+            </a>
+            
+            <a href="/review4" class="menu-item">
+                <span class="icon">🧪</span>
+                Review IV - Testing
+            </a>
+            
+            <a href="/review5" class="menu-item">
+                <span class="icon">📊</span>
+                Review V - Final
+            </a>
+            
+            <div class="menu-divider"></div>
+            
+            <!-- Additional Options -->
+            <a href="/" class="menu-item">
+                <span class="icon">🏠</span>
+                Home
+            </a>
+             
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <form id="form-data">
+            <!-- Removed the duplicate h2 title here -->
+            
+            <label for="group_id">Group ID:</label>
+            <input type="text" id="group_id" name="group_id" required placeholder="eg: BIA-01" autocomplete="off">
+
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+<div class="section">
+  <h3>ATTENDANCE</h3>
+  <div class="attendance-container">
+    <div class="attendance-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Roll No</th>
+            <th>Student Name</th>
+            <th>Present</th>
+          </tr>
+        </thead>
+        <tbody id="attendance-tbody">
+          <!-- Attendance rows will be populated dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+            <div class="section">
+                <h3>REVIEW - I CHECKLIST : FINALIZATION OF SCOPE</h3>
+                <div class="question">
+                    <label>1. Is the statement short and concise (10-20 words maximum)?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ps1-yes" name="que_1.1.1" value="Y" required><label for="ps1-yes">Yes</label>
+                        <input type="radio" id="ps1-no" name="que_1.1.1" value="N"><label for="ps1-no">No</label>
+                        <input type="radio" id="ps1-na" name="que_1.1.1" value="NA"><label for="ps1-na">N/A</label>
+                        <input type="radio" id="ps1-nc" name="que_1.1.1" value="NC"><label for="ps1-nc">NC</label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <label>2. Does the statement give clear indication about what your project will accomplish?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ps2-yes" name="que_1.1.2" value="Y" required><label for="ps2-yes">Yes</label>
+                        <input type="radio" id="ps2-no" name="que_1.1.2" value="N"><label for="ps2-no">No</label>
+                        <input type="radio" id="ps2-na" name="que_1.1.2" value="NA"><label for="ps2-na">N/A</label>
+                        <input type="radio" id="ps2-nc" name="que_1.1.2" value="NC"><label for="ps2-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>3. Can a person who is not familiar with the project understand scope of the project by reading the Project Problem Statement?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ps3-yes" name="que_1.1.3" value="Y" required><label for="ps3-yes">Yes</label>
+                        <input type="radio" id="ps3-no" name="que_1.1.3" value="N"><label for="ps3-no">No</label>
+                        <input type="radio" id="ps3-na" name="que_1.1.3" value="NA"><label for="ps3-na">N/A</label>
+                        <input type="radio" id="ps3-nc" name="que_1.1.3" value="NC"><label for="ps3-nc">NC</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>REQUIREMENT: SCOPE AND OBJECTIVES</h3>
+                <div class="question">
+                    <label>a. Are all aspects of the requirements document addressed in the design?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="req1-yes" name="que_1.2.1" value="Y" required><label for="req1-yes">Yes</label>
+                        <input type="radio" id="req1-no" name="que_1.2.1" value="N"><label for="req1-no">No</label>
+                        <input type="radio" id="req1-na" name="que_1.2.1" value="NA"><label for="req1-na">N/A</label>
+                        <input type="radio" id="req1-nc" name="que_1.2.1" value="NC"><label for="req1-nc">NC</label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <label>b. Is the architecture / block diagram well defined and understood?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="req2-yes" name="que_1.2.2" value="Y" required><label for="req2-yes">Yes</label>
+                        <input type="radio" id="req2-no" name="que_1.2.2" value="N"><label for="req2-no">No</label>
+                        <input type="radio" id="req2-na" name="que_1.2.2" value="NA"><label for="req2-na">N/A</label>
+                        <input type="radio" id="req2-nc" name="que_1.2.2" value="NC"><label for="req2-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>c. The project's objective of study (what product, process, resource etc.) is being addressed?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="req3-yes" name="que_1.2.3" value="Y" required><label for="req3-yes">Yes</label>
+                        <input type="radio" id="req3-no" name="que_1.2.3" value="N"><label for="req3-no">No</label>
+                        <input type="radio" id="req3-na" name="que_1.2.3" value="NA"><label for="req3-na">N/A</label>
+                        <input type="radio" id="req3-nc" name="que_1.2.3" value="NC"><label for="req3-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>d. The project's purpose: is the purpose of project addressed properly (why it's being pursued: to evaluate, reduce, increase, etc.)?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="req4-yes" name="que_1.2.4" value="Y" required><label for="req4-yes">Yes</label>
+                        <input type="radio" id="req4-no" name="que_1.2.4" value="N"><label for="req4-no">No</label>
+                        <input type="radio" id="req4-na" name="que_1.2.4" value="NA"><label for="req4-na">N/A</label>
+                        <input type="radio" id="req4-nc" name="que_1.2.4" value="NC"><label for="req4-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>e. The project's viewpoint: Is the project's viewpoint understood? (Who is the project's end user)?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="req5-yes" name="que_1.2.5" value="Y" required><label for="req5-yes">Yes</label>
+                        <input type="radio" id="req5-no" name="que_1.2.5" value="N"><label for="req5-no">No</label>
+                        <input type="radio" id="req5-na" name="que_1.2.5" value="NA"><label for="req5-na">N/A</label>
+                        <input type="radio" id="req5-nc" name="que_1.2.5" value="NC"><label for="req5-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>f. Is the project goal statement in alignment with the sponsoring organization's business goals and mission?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="req6-yes" name="que_1.2.6" value="Y" required><label for="req6-yes">Yes</label>
+                        <input type="radio" id="req6-no" name="que_1.2.6" value="N"><label for="req6-no">No</label>
+                        <input type="radio" id="req6-na" name="que_1.2.6" value="NA"><label for="req6-na">N/A</label>
+                        <input type="radio" id="req6-nc" name="que_1.2.6" value="NC"><label for="req6-nc">NC</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>ANALYSIS</h3>
+                <div class="question">
+                    <label>1. Is information domain analysis complete, consistent and accurate?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana1-yes" name="que_1.3.1" value="Y" required><label for="ana1-yes">Yes</label>
+                        <input type="radio" id="ana1-no" name="que_1.3.1" value="N"><label for="ana1-no">No</label>
+                        <input type="radio" id="ana1-na" name="que_1.3.1" value="NA"><label for="ana1-na">N/A</label>
+                        <input type="radio" id="ana1-nc" name="que_1.3.1" value="NC"><label for="ana1-nc">NC</label>
+                    </div>
+                </div>
+
+                <div class="question">
+                    <label>2. Is problem statement categorized in identified area and targeted towards specific area therein?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana2-yes" name="que_1.3.2" value="Y" required><label for="ana2-yes">Yes</label>
+                        <input type="radio" id="ana2-no" name="que_1.3.2" value="N"><label for="ana2-no">No</label>
+                        <input type="radio" id="ana2-na" name="que_1.3.2" value="NA"><label for="ana2-na">N/A</label>
+                        <input type="radio" id="ana2-nc" name="que_1.3.2" value="NC"><label for="ana2-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>3. Are external and internal interfaces properly defined?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana3-yes" name="que_1.3.3" value="Y" required><label for="ana3-yes">Yes</label>
+                        <input type="radio" id="ana3-no" name="que_1.3.3" value="N"><label for="ana3-no">No</label>
+                        <input type="radio" id="ana3-na" name="que_1.3.3" value="NA"><label for="ana3-na">N/A</label>
+                        <input type="radio" id="ana3-nc" name="que_1.3.3" value="NC"><label for="ana3-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>4. Does the Use Case Model properly reflect the actors and their roles and responsibilities?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana4-yes" name="que_1.3.4" value="Y" required><label for="ana4-yes">Yes</label>
+                        <input type="radio" id="ana4-no" name="que_1.3.4" value="N"><label for="ana4-no">No</label>
+                        <input type="radio" id="ana4-na" name="que_1.3.4" value="NA"><label for="ana4-na">N/A</label>
+                        <input type="radio" id="ana4-nc" name="que_1.3.4" value="NC"><label for="ana4-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>5. Are all requirements traceable to system level?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana5-yes" name="que_1.3.5" value="Y" required><label for="ana5-yes">Yes</label>
+                        <input type="radio" id="ana5-no" name="que_1.3.5" value="N"><label for="ana5-no">No</label>
+                        <input type="radio" id="ana5-na" name="que_1.3.5" value="NA"><label for="ana5-na">N/A</label>
+                        <input type="radio" id="ana5-nc" name="que_1.3.5" value="NC"><label for="ana5-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>6. Is similar type of methodology / model used for existing work?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana6-yes" name="que_1.3.6" value="Y" required><label for="ana6-yes">Yes</label>
+                        <input type="radio" id="ana6-no" name="que_1.3.6" value="N"><label for="ana6-no">No</label>
+                        <input type="radio" id="ana6-na" name="que_1.3.6" value="NA"><label for="ana6-na">N/A</label>
+                        <input type="radio" id="ana6-nc" name="que_1.3.6" value="NC"><label for="ana6-nc">NC</label>
+                    </div>
+                </div>
+                
+                <div class="question">
+                    <label>7. Are requirements consistent with schedule, resources and budget?</label>
+                    <div class="radio-group">
+                        <input type="radio" id="ana7-yes" name="que_1.3.7" value="Y" required><label for="ana7-yes">Yes</label>
+                        <input type="radio" id="ana7-no" name="que_1.3.7" value="N"><label for="ana7-no">No</label>
+                        <input type="radio" id="ana7-na" name="que_1.3.7" value="NA"><label for="ana7-na">N/A</label>
+                        <input type="radio" id="ana7-nc" name="que_1.3.7" value="NC"><label for="ana7-nc">NC</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <h2>STUDENT PERFORMANCE EVALUATION</h2>
+                <table id="performance-table">
+    <thead id="performance-thead"></thead>
+    <tbody id="performance-tbody"></tbody>
+    <tfoot id="performance-tfoot"></tfoot>
+  </table>
+            </div>
+            
+            <div class="comment-box">
+                <label for="comments">Comments:</label>
+                <textarea id="comments" name="c1"></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" id="generate-pdf" onclick="generatePDF()">Generate PDF</button>
+                <button type="button" id="next-review" onclick="nextReview()">Next Review</button>
+            </div>
+        </form>
+    </div>
+
+<!-- DYNAMIC PERFORMANCE TABLE SCRIPT - INTEGRATED FROM REFERENCE -->
+<script>
+// Global variables to track state
+let currentMemberCount = 4;
+let isTableBuilding = false;
+
+// Fetch member count from database
+async function fetchMemberCount(groupId) {
+    if (!groupId) return 4;
+    
+    try {
+        console.log(`Fetching member count for group: ${groupId}`);
+        const response = await fetch(`/api/attendance/${groupId}/1`);
+        if (!response.ok) throw new Error(`Failed to fetch members: ${response.status}`);
+        
+        const data = await response.json();
+        const memberCount = data.members ? data.members.length : 4;
+        console.log(`Found ${memberCount} members for group ${groupId}`);
+        return memberCount;
+    } catch (error) {
+        console.error('Error fetching member count:', error);
+        return 4; // Default fallback
+    }
+}
+
+// Build performance table with dynamic member count
+async function buildPerformanceTable(groupId, forceMemberCount = null) {
+    if (isTableBuilding) {
+        console.log('Table is already being built, skipping...');
+        return;
+    }
+    
+    isTableBuilding = true;
+    
+    try {
+        const thead = document.getElementById("performance-thead");
+        const tbody = document.getElementById("performance-tbody");
+        const tfoot = document.getElementById("performance-tfoot");
+
+        if (!thead || !tbody || !tfoot) {
+            console.error('Table elements not found');
+            return;
+        }
+
+        // Determine member count
+        let memberCount = forceMemberCount;
+        if (memberCount === null) {
+            memberCount = await fetchMemberCount(groupId);
+        }
+        
+        currentMemberCount = memberCount;
+        console.log(`Building table for group ${groupId} with ${memberCount} members`);
+
+        // Clear existing content
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+        tfoot.innerHTML = "";
+
+        // Build header
+        const headerRow1 = `<tr>
+            <th rowspan="2">Particulars</th>
+            <th colspan="${memberCount}">Marks (25M) Group Members</th>
+        </tr>`;
+        
+        let headerRow2 = "<tr>";
+        for (let i = 1; i <= memberCount; i++) {
+            headerRow2 += `<th>Member ${i}</th>`;
+        }
+        headerRow2 += "</tr>";
+        
+        thead.innerHTML = headerRow1 + headerRow2;
+
+        // Build body with Review 1 specific questions
+        const questions = [
+            { text: "1. Understanding background and Topic (2M)", max: 2 },
+            { text: "2. Specifies Project Scope and Objective (2M)", max: 2 },
+            { text: "3. Literature Survey (5M)", max: 5 },
+            { text: "4. Project Planning (4M)", max: 4 },
+            { text: "5. Contribution of the Student (4M)", max: 4 },
+            { text: "6. Presentation Skills (4M)", max: 4 },
+            { text: "7. Question and Answer (4M)", max: 4 }
+        ];
+
+        questions.forEach((q, qIndex) => {
+            let row = `<tr><td>${q.text}</td>`;
+            for (let i = 1; i <= memberCount; i++) {
+                const fieldName = `1.${i}.${qIndex + 1}`;
+                row += `<td><input type="number" name="${fieldName}" max="${q.max}" min="0" step="0.5" class="marks" data-member="${i}" data-max="${q.max}"></td>`;
+            }
+            row += "</tr>";
+            tbody.innerHTML += row;
+        });
+
+        // Build footer (totals)
+        let footerRow = `<tr><td><strong>Total (25M)</strong></td>`;
+        for (let i = 1; i <= memberCount; i++) {
+            footerRow += `<td><input type="number" name="1.${i}.s1" class="total" readonly></td>`;
+        }
+        footerRow += "</tr>";
+        tfoot.innerHTML = footerRow;
+
+        // Setup event listeners after a short delay
+        setTimeout(() => {
+            attachTableEventListeners();
+            setupArrowNavigation();
+        }, 100);
+        
+    } catch (error) {
+        console.error('Error building table:', error);
+    } finally {
+        isTableBuilding = false;
+    }
+}
+
+// Attach event listeners to table inputs
+function attachTableEventListeners() {
+    const marks = document.querySelectorAll('.marks');
+    console.log(`Attaching listeners to ${marks.length} mark inputs`);
+    
+    marks.forEach(input => {
+        // Remove existing listeners first
+        input.removeEventListener('input', handleMarksInput);
+        input.removeEventListener('change', handleMarksChange);
+        
+        // Add new listeners
+        input.addEventListener('input', handleMarksInput);
+        input.addEventListener('change', handleMarksChange);
+    });
+}
+
+// Handle marks input events
+function handleMarksInput() {
+    calculateTotals();
+}
+
+// Handle marks change events
+function handleMarksChange() {
+    validateInput(this);
+    calculateTotals();
+}
+
+// Setup arrow key navigation
+function setupArrowNavigation() {
+    const inputs = document.querySelectorAll("#performance-table input[type='number']");
+    console.log(`Setting up navigation for ${inputs.length} inputs`);
+    
+    // Remove existing listeners
+    inputs.forEach(input => {
+        input.removeEventListener('keydown', handleKeyNavigation);
+    });
+    
+    // Add navigation listeners
+    inputs.forEach(input => {
+        input.addEventListener('keydown', handleKeyNavigation);
+    });
+}
+
+// Handle keyboard navigation
+function handleKeyNavigation(e) {
+    if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+    
+    const currentInput = e.target;
+    const tbody = document.querySelector('#performance-table tbody');
+    const tfoot = document.querySelector('#performance-table tfoot');
+    const rows = [...tbody.querySelectorAll('tr'), ...tfoot.querySelectorAll('tr')];
+    
+    const currentRow = currentInput.closest('tr');
+    const currentRowIndex = rows.indexOf(currentRow);
+    const currentCellIndex = Array.from(currentRow.querySelectorAll('input')).indexOf(currentInput);
+    
+    let targetInput = null;
+    
+    switch (e.key) {
+        case 'ArrowUp':
+            if (currentRowIndex > 0) {
+                const targetRow = rows[currentRowIndex - 1];
+                const targetInputs = targetRow.querySelectorAll('input');
+                if (targetInputs[currentCellIndex]) {
+                    targetInput = targetInputs[currentCellIndex];
+                }
+            }
+            break;
+        case 'ArrowDown':
+            if (currentRowIndex < rows.length - 1) {
+                const targetRow = rows[currentRowIndex + 1];
+                const targetInputs = targetRow.querySelectorAll('input');
+                if (targetInputs[currentCellIndex]) {
+                    targetInput = targetInputs[currentCellIndex];
+                }
+            }
+            break;
+        case 'ArrowLeft':
+            if (currentCellIndex > 0) {
+                const targetInputs = currentRow.querySelectorAll('input');
+                targetInput = targetInputs[currentCellIndex - 1];
+            }
+            break;
+        case 'ArrowRight':
+            if (currentCellIndex < currentRow.querySelectorAll('input').length - 1) {
+                const targetInputs = currentRow.querySelectorAll('input');
+                targetInput = targetInputs[currentCellIndex + 1];
+            }
+            break;
+    }
+    
+    if (targetInput) {
+        targetInput.focus();
+        targetInput.select();
+        e.preventDefault();
+    }
+}
+
+// Calculate totals for all members
+function calculateTotals() {
+    console.log(`Calculating totals for ${currentMemberCount} members`);
+    
+    for (let i = 1; i <= currentMemberCount; i++) {
+        let total = 0;
+        let isValid = true;
+        
+        // Sum up all marks (questions 1-7)
+        for (let qNum = 1; qNum <= 7; qNum++) {
+            const input = document.querySelector(`input[name="1.${i}.${qNum}"]`);
+            if (input && input.type === 'number') {
+                const value = parseFloat(input.value);
+                if (!isNaN(value) && value >= 0) {
+                    total += value;
+                } else if (input.value !== '') {
+                    isValid = false;
+                }
+            }
+        }
+        
+        const totalField = document.querySelector(`input[name="1.${i}.s1"]`);
+        if (totalField) {
+            totalField.value = isValid && total > 0 ? total : '';
+            totalField.classList.toggle('error', !isValid || total > 25);
+        }
+    }
+}
+
+// Validate individual input
+function validateInput(input) {
+    if (input.type !== 'number') return true;
+    
+    const max = parseFloat(input.getAttribute('max')) || Infinity;
+    const min = parseFloat(input.getAttribute('min')) || 0;
+    const value = parseFloat(input.value);
+    
+    if (input.value === '') {
+        input.classList.remove('error');
+        return true;
+    }
+    
+    if (isNaN(value) || value < min) {
+        input.value = '';
+        input.classList.add('error');
+        return false;
+    }
+
+    if (value > max) {
+        input.value = max;
+        input.classList.add('error');
+        return false;
+    }
+    
+    input.classList.remove('error');
+    return true;
+}
+
+// Group ID change handler
+async function handleGroupIdChange() {
+    const groupIdInput = document.getElementById("group_id");
+    const gid = groupIdInput.value.trim();
+    
+    console.log(`Group ID changed to: ${gid}`);
+    
+    if (gid) {
+        await buildPerformanceTable(gid);
+    } else {
+        await buildPerformanceTable("", 4);
+    }
+}
+
+// Initialize everything when DOM is ready
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing performance table system...');
+    
+    const groupIdInput = document.getElementById("group_id");
+    if (groupIdInput) {
+        // Remove existing listeners
+        groupIdInput.removeEventListener('change', handleGroupIdChange);
+        groupIdInput.removeEventListener('blur', handleGroupIdChange);
+        
+        // Add new listeners
+        groupIdInput.addEventListener('change', handleGroupIdChange);
+        
+        // Build initial table
+        const initialGroupId = groupIdInput.value.trim();
+        if (initialGroupId) {
+            await buildPerformanceTable(initialGroupId);
+        } else {
+            await buildPerformanceTable("", 4);
+        }
+    } else {
+        console.error('Group ID input not found');
+        await buildPerformanceTable("", 4);
+    }
+});
+</script>
+
+<!-- ENHANCED ATTENDANCE MANAGER - INTEGRATED FROM REFERENCE -->
+<script>
+class Review1AttendanceManager {
+    constructor() {
+        this.reviewNumber = 1;
+        this.groupIdInput = document.getElementById('group_id');
+        this.attendanceTableBody = document.getElementById('attendance-tbody');
+        this.membersData = [];
+        this.isLoading = false;
+        this.init();
+    }
+    
+    init() {
+        if (this.groupIdInput) {
+            this.groupIdInput.addEventListener('blur', () => this.loadAttendance());
+            this.groupIdInput.addEventListener('change', () => this.loadAttendance());
+        }
+        
+        // Load initial attendance if group ID exists
+        if (this.groupIdInput && this.groupIdInput.value.trim()) {
+            setTimeout(() => this.loadAttendance(), 600);
+        }
+    }
+    
+    async loadAttendance() {
+        const groupId = this.groupIdInput.value.trim();
+        if (!groupId || this.isLoading) {
+            this.clearAttendanceTable();
+            return;
+        }
+        
+        this.isLoading = true;
+        
+        try {
+            console.log(`Loading attendance for group: ${groupId}`);
+            const response = await fetch(`/api/attendance/${groupId}/1`);
+            if (!response.ok) throw new Error(`Failed to fetch attendance: ${response.status}`);
+            
+            const data = await response.json();
+            this.membersData = data.members || [];
+            console.log(`Loaded ${this.membersData.length} members`);
+            
+            this.populateAttendanceTable();
+            
+            // Rebuild performance table after attendance is loaded
+            if (typeof buildPerformanceTable === 'function' && !isTableBuilding) {
+                await buildPerformanceTable(groupId, this.membersData.length);
+            }
+            
+        } catch (error) {
+            console.error('Error loading attendance:', error);
+            this.clearAttendanceTable();
+        } finally {
+            this.isLoading = false;
+        }
+    }
+    
+    populateAttendanceTable() {
+        if (!this.attendanceTableBody) return;
+        
+        this.attendanceTableBody.innerHTML = '';
+        
+        this.membersData.forEach((member, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${member.roll_no}</td>
+                <td>${member.name}</td>
+                <td>
+                    <input type="checkbox" 
+                           id="attendance_${index}" 
+                           name="attendance_${member.roll_no}" 
+                           data-roll-no="${member.roll_no}"
+                           data-member-index="${index + 1}"
+                           ${member.present ? 'checked' : ''}
+                           onchange="attendanceManager.handleAttendanceChange(this)">
+                    <label for="attendance_${index}"></label>
+                </td>
+            `;
+            this.attendanceTableBody.appendChild(row);
+        });
+        
+        // Apply initial attendance after table is built
+        setTimeout(() => this.applyInitialAttendance(), 300);
+    }
+    
+    clearAttendanceTable() {
+        if (this.attendanceTableBody) {
+            this.attendanceTableBody.innerHTML = '<tr><td colspan="3">No data available</td></tr>';
+        }
+        this.membersData = [];
+    }
+    
+    handleAttendanceChange(checkbox) {
+        const memberIndex = parseInt(checkbox.dataset.memberIndex);
+        const isPresent = checkbox.checked;
+        
+        console.log(`Member ${memberIndex} attendance changed to: ${isPresent}`);
+        
+        // Wait for performance table to be ready
+        setTimeout(() => {
+            this.updateMarksForAttendance(memberIndex, isPresent);
+            this.saveAttendance();
+            
+            if (typeof calculateTotals === 'function') {
+                setTimeout(() => calculateTotals(), 100);
+            }
+        }, 100);
+    }
+    
+    applyInitialAttendance() {
+        console.log('Applying initial attendance settings');
+        this.membersData.forEach((member, index) => {
+            if (!member.present) {
+                this.updateMarksForAttendance(index + 1, false);
+            }
+        });
+        
+        if (typeof calculateTotals === 'function') {
+            setTimeout(() => calculateTotals(), 200);
+        }
+    }
+    
+    updateMarksForAttendance(memberIndex, isPresent) {
+        console.log(`Updating marks for member ${memberIndex}, present: ${isPresent}`);
+        
+        // Review 1 fields: 1.X.1 through 1.X.7 (where X = member number)
+        const fieldNumbers = [1, 2, 3, 4, 5, 6, 7];
+        
+        fieldNumbers.forEach(fieldNum => {
+            const fieldName = `1.${memberIndex}.${fieldNum}`;
+            const input = document.querySelector(`input[name="${fieldName}"]`);
+            
+            if (input && input.type === 'number') {
+                input.value = isPresent ? '' : '0';
+                console.log(`Set ${fieldName} to ${isPresent ? 'empty' : '0'}`);
+            }
+        });
+    }
+    
+    async saveAttendance() {
+        const groupId = this.groupIdInput.value.trim();
+        if (!groupId) return;
+        
+        const attendanceData = {};
+        document.querySelectorAll('input[data-roll-no]').forEach(checkbox => {
+            attendanceData[checkbox.dataset.rollNo] = checkbox.checked;
+        });
+        
+        try {
+            await fetch('/api/attendance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    group_id: groupId,
+                    review_num: 1,
+                    attendance: attendanceData
+                })
+            });
+            console.log('Attendance saved successfully');
+        } catch (error) {
+            console.error('Error saving attendance:', error);
+        }
+    }
+}
+
+// Initialize attendance manager
+let attendanceManager;
+document.addEventListener('DOMContentLoaded', function() {
+    attendanceManager = new Review1AttendanceManager();
+});
+</script>
+
+<!-- FORM DATA MANAGEMENT - KEEPING EXISTING PERFECT CODE -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-data');
+    const groupIdInput = document.getElementById('group_id');
+    
+    if (!form || !groupIdInput) {
+        console.error('Required elements (#form-data or #group_id) not found');
+        return;
+    }
+
+    console.log('Review 1 script initialized');
+
+    let lastGroupId = null;
+    let isLoadingData = false;
+
+    // Function to clear all form fields
+    function clearFormFields() {
+        if (isLoadingData) return; // Don't clear while loading data
+        
+        console.log('Clearing all form fields');
+        
+        // Clear all input types except attendance checkboxes
+        form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+            if (!input.hasAttribute('data-roll-no')) { // Don't clear attendance checkboxes
+                input.checked = false;
+            }
+        });
+        
+        form.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], textarea, select').forEach(input => {
+            if (input.id !== 'group_id' && !input.classList.contains('total')) { // Don't clear the group_id field itself or totals
+                input.value = '';
+            }
+        });
+
+        // Trigger total calculations to reset calculated values
+        if (typeof calculateTotals === 'function') {
+            setTimeout(() => calculateTotals(), 100);
+        }
+    }
+
+    // Auto-fetch saved data when group_id field loses focus
+    groupIdInput.addEventListener('blur', async function() {
+        const groupId = groupIdInput.value.trim();
+        if (!groupId || isLoadingData) return;
+
+        console.log('Group ID blur event triggered for:', groupId);
+        
+        // Always clear form first when group_id changes
+        if (groupId !== lastGroupId) {
+            console.log('Group ID changed on blur, clearing form');
+            clearFormFields();
+            lastGroupId = groupId;
+        }
+
+        console.log('Fetching data for group:', groupId);
+        isLoadingData = true;
+        
+        try {
+            const response = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+            if (!response.ok) {
+                console.error('Fetch failed:', response.status);
+                return;
+            }
+
+            const data = await response.json();
+            const responses = data.responses || {};
+            
+            console.log('Fetched responses:', responses);
+
+            if (Object.keys(responses).length > 0) {
+                // Wait for performance table to be built before filling data
+                setTimeout(() => {
+                    let filledCount = 0;
+                    for (const [fieldName, fieldValue] of Object.entries(responses)) {
+                        const elements = form.querySelectorAll(`[name="${CSS.escape(fieldName)}"]`);
+                        
+                        if (elements.length === 0) {
+                            console.warn('Field not found:', fieldName);
+                            continue;
+                        }
+
+                        elements.forEach(element => {
+                            if (element.type === 'radio' || element.type === 'checkbox') {
+                                if (element.value === fieldValue) {
+                                    element.checked = true;
+                                    filledCount++;
+                                }
+                            } else {
+                                element.value = fieldValue;
+                                filledCount++;
+                            }
+                        });
+                    }
+
+                    console.log('Auto-filled', filledCount, 'fields');
+
+                    // Trigger total calculations
+                    if (typeof calculateTotals === 'function') {
+                        setTimeout(() => calculateTotals(), 100);
+                    }
+                }, 500);
+            } else {
+                console.log('No existing data found for group:', groupId);
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+        } finally {
+            isLoadingData = false;
+        }
+    });
+
+    // Alternative: Clear form immediately when group_id changes (on input event)
+    groupIdInput.addEventListener('input', function() {
+        // Cancel any pending save operations
+        clearTimeout(saveTimeout);
+        
+        // Clear form immediately when group_id changes
+        const currentGroupId = groupIdInput.value.trim();
+        if (currentGroupId && !isLoadingData) {
+            clearFormFields();
+        }
+    });
+
+    // Auto-save functionality with debouncing
+    let saveTimeout;
+    
+    async function saveFormData() {
+        const groupId = groupIdInput.value.trim();
+        if (!groupId || isLoadingData) {
+            console.log('No group ID provided or loading data, skipping save');
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = { group_id: groupId };
+        
+        let fieldCount = 0;
+        for (const [name, value] of formData.entries()) {
+            if (value.trim()) { // Only save non-empty values
+                payload[name] = value;
+                fieldCount++;
+            }
+        }
+
+        if (fieldCount <= 1) { // Only group_id
+            console.log('No data to save');
+            return;
+        }
+
+        console.log('Saving', fieldCount, 'fields for group', groupId);
+
+        try {
+            const response = await fetch('/api/save-response', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                console.error('Save failed:', response.status);
+                return;
+            }
+
+            const result = await response.json();
+            console.log('Save successful:', result.message);
+        } catch (error) {
+            console.error('Save error:', error);
+        }
+    }
+
+    function debouncedSave() {
+        if (isLoadingData) return;
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveFormData, 1000); // 1 second delay
+    }
+
+    // Listen for form changes and auto-save (but not on group_id changes or attendance)
+    form.addEventListener('input', function(event) {
+        // Don't trigger auto-save when group_id field changes or attendance checkboxes
+        if (event.target.id !== 'group_id' && !event.target.hasAttribute('data-roll-no')) {
+            debouncedSave();
+        }
+    });
+    
+    form.addEventListener('change', function(event) {
+        // Don't trigger auto-save when group_id field changes or attendance checkboxes
+        if (event.target.id !== 'group_id' && !event.target.hasAttribute('data-roll-no')) {
+            debouncedSave();
+        }
+    });
+
+    // Save before PDF generation
+    const generatePdfButton = document.getElementById('generate-pdf');
+    if (generatePdfButton) {
+        const originalOnClick = generatePdfButton.onclick;
+        
+        generatePdfButton.onclick = async function(event) {
+            const groupId = groupIdInput.value.trim();
+            if (groupId && !isLoadingData) {
+                await saveFormData();
+                console.log('Data saved before PDF generation');
+            }
+            
+            if (originalOnClick) {
+                return originalOnClick.call(this, event);
+            }
+        };
+    }
+
+    console.log('Review 1 save/load system ready');
+});
+</script>
+
+<!-- UTILITY FUNCTIONS -->
+<script>
+// Validate required form fields
+function validateForm() {
+    let isValid = true;
+    const requiredFields = ['group_id', 'date'];
+    
+    requiredFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && !element.value.trim()) {
+            element.classList.add('error');
+            isValid = false;
+        } else if (element) {
+            element.classList.remove('error');
+        }
+    });
+
+    if (!isValid) {
+        alert('Please fill all required fields');
+    }
+
+    return isValid;
+}
+
+// Generate PDF function
+async function generatePDF() {
+    if (!validateForm()) return;
+
+    try {
+        const submitBtn = document.getElementById('generate-pdf');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Generating PDF...';
+
+        const formData = new FormData(document.getElementById('form-data'));
+        const response = await fetch('/generate-pdf-review1', {
+            method: 'POST',
+            body: JSON.stringify(Object.fromEntries(formData)),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        // Handle PDF download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'Review-I_Form.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+        alert(`Failed to generate PDF: ${error.message}`);
+    } finally {
+        const submitBtn = document.getElementById('generate-pdf');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Generate PDF';
+        }
+    }
+}
+
+// Navigation to next review
+function nextReview() {
+    // Save form data to sessionStorage (better for temporary data)
+    const formData = new FormData(document.getElementById('form-data'));
+    const data = Object.fromEntries(formData.entries());
+    sessionStorage.setItem('review1_data', JSON.stringify(data));
+    
+    // Redirect through Flask route
+    window.location.href = '/review2';
+}
+</script>
+
+<!-- HEADER SCROLL FUNCTIONALITY -->
+<script>
+// Header hide/show on scroll functionality
+let lastScrollTop = 0;
+let scrollThreshold = 5; // Minimum scroll distance to trigger hide/show
+let isHeaderVisible = true;
+
+function handleScroll() {
+    const header = document.querySelector('.page-header');
+    if (!header) return;
+    
+    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Check if we've scrolled enough to warrant a change
+    if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
+        return;
+    }
+    
+    // Scrolling down - hide header
+    if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
+        header.classList.add('hidden');
+        isHeaderVisible = false;
+    }
+    // Scrolling up - show header
+    else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
+        header.classList.remove('hidden');
+        isHeaderVisible = true;
+    }
+    
+    // Add scrolled class for backdrop effect when scrolled past header height
+    if (currentScrollTop > 80) {
+        header.classList.add('scrolled');
+    } else {
+        header.classList.remove('scrolled');
+    }
+    
+    lastScrollTop = currentScrollTop;
+}
+
+// Throttle scroll events for better performance
+let scrollTimer = null;
+function throttledScroll() {
+    if (scrollTimer) return;
+    
+    scrollTimer = setTimeout(() => {
+        handleScroll();
+        scrollTimer = null;
+    }, 10);
+}
+</script>
+
+<!-- MENU FUNCTIONALITY -->
+<script>
+let menuOpen = false;
+
+function toggleMenu() {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const menuDropdown = document.getElementById('menuDropdown');
+    
+    menuOpen = !menuOpen;
+    
+    if (menuOpen) {
+        menuToggle.classList.add('active');
+        menuDropdown.classList.add('show');
+    } else {
+        menuToggle.classList.remove('active');
+        menuDropdown.classList.remove('show');
+    }
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', function(event) {
+    const menuContainer = document.querySelector('.menu-container');
+    
+    if (!menuContainer.contains(event.target) && menuOpen) {
+        toggleMenu();
+    }
+});
+
+// Close menu when pressing Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && menuOpen) {
+        toggleMenu();
+    }
+});
+
+// Highlight current page and initialize scroll listener
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const menuItems = document.querySelectorAll('.menu-item');
+    
+    menuItems.forEach(item => {
+        if (item.getAttribute('href') === currentPath) {
+            item.classList.add('current');
+        }
+    });
+    
+    // Add scroll listener for header hide/show
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+});
+</script>
+
+</body>
+</html>

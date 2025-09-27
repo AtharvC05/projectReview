@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Review Summary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
+</head>
+<body>
+     <a href="/auth/logout" class="logout-btn">Logout</a>
+    <div class="page-header">
+        <div class="header-left"></div>
+        <div class="header-center">
+            <h1>Final Review Summary</h1>
+        </div>
+        <div class="menu-container">
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <span class="menu-line"></span>
+                <span class="menu-line"></span>
+                <span class="menu-line"></span>
+            </button>
+            
+            <div class="menu-dropdown" id="menuDropdown">
+                <!-- Database Management -->
+                <a href="/data-manager" class="menu-item">
+                    <span class="icon">🗄️</span>
+                    Database Manager
+                </a>
+                <a href="/scheduler" class="menu-item ">
+                    <span class="icon">📅</span>
+                    Review Scheduler
+                </a>
+                <a href="/attendance-dashboard" class="menu-item">
+                    <span class="icon">🙋</span>
+                    Attendance
+                </a>
+                <div class="menu-divider"></div>
+                
+                <!-- Review Pages -->
+                <a href="/review1" class="menu-item">
+                    <span class="icon">📝</span>
+                    Review I - Scope
+                </a>
+                
+                <a href="/review2" class="menu-item">
+                    <span class="icon">🎨</span>
+                    Review II - Design
+                </a>
+                
+                <a href="/review3" class="menu-item">
+                    <span class="icon">⚙️</span>
+                    Review III - Implementation
+                </a>
+                
+                <a href="/review4" class="menu-item">
+                    <span class="icon">🧪</span>
+                    Review IV - Testing
+                </a>
+                
+                <a href="/review5" class="menu-item current">
+                    <span class="icon">📊</span>
+                    Review V - Final
+                </a>
+                
+                <div class="menu-divider"></div>
+                
+                <!-- Additional Options -->
+                <a href="/" class="menu-item">
+                    <span class="icon">🏠</span>
+                    Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        <!-- Group ID Selection -->
+        <div class="group-selection">
+            <label for="group_id_select">Select Group ID:</label>
+            <div class="group-input-container">
+                <input type="text" id="group_id_select" placeholder="Enter Group ID (e.g., BIA-01)" required autocomplete="off">
+                <button type="button" class="load-btn" onclick="loadGroupData()">Load Review Data</button>
+            </div>
+            <div id="status-message"></div>
+        </div>
+
+        <form id="form-data" style="display:none;">
+            
+            <label for="group_id">Group ID:</label>
+            <input type="text" id="group_id" name="group_id" required readonly>
+            
+            <div class="table-responsive">
+                <h3>Student Performance Summary</h3>
+                <table id="summary-table">
+                    <thead id="table-header">
+                        <!-- Dynamic header will be generated here -->
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Dynamic rows will be generated here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <label for="comments">Final Comments:</label>
+                <textarea id="comments" name="c5" rows="4" placeholder="Enter any final comments here"></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="button" id="back-review" onclick="previousReview()">Back</button>
+                <button type="button" id="generate-pdf" onclick="submitForm()">Generate Final PDF</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentGroupId = null;
+        let studentCount = 0;
+        let studentData = [];
+        
+        // Load group data from database
+        async function loadGroupData() {
+            const groupIdInput = document.getElementById('group_id_select');
+            if (!groupIdInput) {
+                showMessage('Group ID input not found in DOM', 'error');
+                return;
+            }
+            
+            const groupId = groupIdInput.value.trim();
+            if (!groupId) {
+                showMessage('Please enter a Group ID', 'error');
+                return;
+            }
+            
+            try {
+                // Show loading state
+                const loadBtn = document.querySelector('.load-btn');
+                loadBtn.disabled = true;
+                loadBtn.textContent = 'Loading...';
+                loadBtn.classList.add('loading');
+                
+                clearMessage();
+                
+                // First, get student count and data
+                const studentsResponse = await fetch(`/api/group-students?group_id=${encodeURIComponent(groupId)}`);
+                if (!studentsResponse.ok) {
+                    const errorData = await studentsResponse.json();
+                    throw new Error(errorData.error || 'Failed to fetch student data');
+                }
+                
+                const studentsData = await studentsResponse.json();
+                studentData = studentsData.students;
+                studentCount = studentData.length;
+                
+                if (studentCount === 0) {
+                    throw new Error('No students found for this group ID');
+                }
+                
+                console.log('Student data:', studentData);
+                console.log('Student count:', studentCount);
+                
+                // Generate dynamic table
+                generateDynamicTable();
+                
+                // Then fetch review totals
+                const response = await fetch(`/api/review-totals?group_id=${encodeURIComponent(groupId)}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch review totals');
+                }
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                console.log('Review Totals:', data.review_totals);
+                
+                currentGroupId = groupId;
+                
+                // Update the form with database data
+                document.getElementById('group_id').value = groupId;
+                loadReviewDataFromAPI(data.review_totals);
+                calculateFinalTotals();
+                
+                // Show the form
+                document.getElementById('form-data').style.display = 'block';
+                
+                showMessage(`Review data loaded successfully for Group ${groupId} (${studentCount} students)`, 'success');
+                
+            } catch (error) {
+                console.error('Error loading group data:', error);
+                showMessage(`Error loading group data: ${error.message}`, 'error');
+                document.getElementById('form-data').style.display = 'none';
+            } finally {
+                const loadBtn = document.querySelector('.load-btn');
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Review Data';
+                loadBtn.classList.remove('loading');
+            }
+        }
+        
+        // Generate dynamic table based on student count
+        function generateDynamicTable() {
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            
+            // Clear existing content
+            tableHeader.innerHTML = '';
+            tableBody.innerHTML = '';
+            
+            // Generate header
+            const headerRow1 = document.createElement('tr');
+            const headerRow2 = document.createElement('tr');
+            
+            // Review Sheet column
+            const reviewSheetHeader = document.createElement('th');
+            reviewSheetHeader.rowSpan = 2;
+            reviewSheetHeader.textContent = 'Review Sheet';
+            headerRow1.appendChild(reviewSheetHeader);
+            
+            // Students header
+            const studentsHeader = document.createElement('th');
+            studentsHeader.colSpan = studentCount;
+            studentsHeader.textContent = `Students (Total Marks)`;
+            headerRow1.appendChild(studentsHeader);
+            
+            // Individual student headers
+            for (let i = 0; i < studentCount; i++) {
+                const studentHeader = document.createElement('th');
+                const studentName = studentData[i] ? studentData[i].student_name : `Student ${i + 1}`;
+                studentHeader.textContent = studentName;
+                studentHeader.title = studentData[i] ? `Roll No: ${studentData[i].roll_no}` : '';
+                headerRow2.appendChild(studentHeader);
+            }
+            
+            tableHeader.appendChild(headerRow1);
+            tableHeader.appendChild(headerRow2);
+            
+            // Generate body rows
+            const reviews = ['Review I', 'Review II', 'Review III', 'Review IV'];
+            
+            for (let reviewIndex = 0; reviewIndex < reviews.length; reviewIndex++) {
+                const row = document.createElement('tr');
+                
+                // Review name cell
+                const reviewCell = document.createElement('td');
+                reviewCell.textContent = reviews[reviewIndex];
+                row.appendChild(reviewCell);
+                
+                // Student score cells
+                for (let studentIndex = 0; studentIndex < studentCount; studentIndex++) {
+                    const scoreCell = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.id = `review${reviewIndex + 1}-student${studentIndex + 1}`;
+                    input.name = `review${reviewIndex + 1}_${studentIndex + 1}`;
+                    input.readOnly = true;
+                    input.value = 0;
+                    scoreCell.appendChild(input);
+                    row.appendChild(scoreCell);
+                }
+                
+                tableBody.appendChild(row);
+            }
+            
+            // Generate final total row
+            const finalRow = document.createElement('tr');
+            finalRow.className = 'final-total';
+            
+            const finalLabelCell = document.createElement('td');
+            finalLabelCell.textContent = 'Final Total (100M)';
+            finalRow.appendChild(finalLabelCell);
+            
+            for (let studentIndex = 0; studentIndex < studentCount; studentIndex++) {
+                const finalCell = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `final-student${studentIndex + 1}`;
+                input.name = `final_${studentIndex + 1}`;
+                input.readOnly = true;
+                input.value = 0;
+                finalCell.appendChild(input);
+                finalRow.appendChild(finalCell);
+            }
+            
+            tableBody.appendChild(finalRow);
+            
+            // Re-enable keyboard navigation for the new table
+            enableKeyboardNavigation();
+        }
+        
+        // Enable keyboard navigation for table inputs
+        function enableKeyboardNavigation() {
+            const inputs = document.querySelectorAll("table input[type='number']");
+            const matrix = [];
+            let maxCols = 0;
+
+            // Build a 2D array (rows × cols) of inputs
+            inputs.forEach(input => {
+                const td = input.closest("td");
+                const tr = input.closest("tr");
+                const rowIndex = Array.from(tr.parentNode.children).indexOf(tr);
+                const colIndex = Array.from(tr.children).indexOf(td);
+                if (!matrix[rowIndex]) matrix[rowIndex] = [];
+                matrix[rowIndex][colIndex] = input;
+                maxCols = Math.max(maxCols, colIndex);
+            });
+
+            inputs.forEach(input => {
+                input.addEventListener("keydown", function (e) {
+                    const td = this.closest("td");
+                    const tr = this.closest("tr");
+                    const rowIndex = Array.from(tr.parentNode.children).indexOf(tr);
+                    const colIndex = Array.from(tr.children).indexOf(td);
+
+                    let target = null;
+
+                    switch (e.key) {
+                        case "ArrowUp":
+                            if (matrix[rowIndex - 1] && matrix[rowIndex - 1][colIndex]) {
+                                target = matrix[rowIndex - 1][colIndex];
+                            }
+                            break;
+                        case "ArrowDown":
+                            if (matrix[rowIndex + 1] && matrix[rowIndex + 1][colIndex]) {
+                                target = matrix[rowIndex + 1][colIndex];
+                            }
+                            break;
+                        case "ArrowLeft":
+                            if (matrix[rowIndex][colIndex - 1]) {
+                                target = matrix[rowIndex][colIndex - 1];
+                            }
+                            break;
+                        case "ArrowRight":
+                            if (matrix[rowIndex][colIndex + 1]) {
+                                target = matrix[rowIndex][colIndex + 1];
+                            }
+                            break;
+                    }
+
+                    if (target) {
+                        target.focus();
+                        e.preventDefault();
+                    }
+                });
+            });
+        }
+        
+        // Show status messages
+        function showMessage(message, type) {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.className = type === 'error' ? 'error-message' : 'success-message';
+            statusDiv.textContent = message;
+        }
+        
+        // Clear status messages
+        function clearMessage() {
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.className = '';
+            statusDiv.textContent = '';
+        }
+        
+        // Load review data from API response
+        function loadReviewDataFromAPI(reviewTotals) {
+            try {
+                // Check if reviewTotals exists
+                if (!reviewTotals) {
+                    throw new Error('Review totals data is null or undefined');
+                }
+
+                console.log('Loading review data:', reviewTotals);
+
+                // Load data for each review
+                const reviews = ['review1', 'review2', 'review3', 'review4'];
+                
+                reviews.forEach((reviewKey, reviewIndex) => {
+                    if (reviewTotals[reviewKey]) {
+                        for (let studentIndex = 1; studentIndex <= studentCount; studentIndex++) {
+                            const element = document.getElementById(`review${reviewIndex + 1}-student${studentIndex}`);
+                            if (element) {
+                                element.value = reviewTotals[reviewKey][studentIndex.toString()] || 0;
+                            }
+                        }
+                    } else {
+                        console.warn(`${reviewKey} data not found`);
+                        // Set default values
+                        for (let studentIndex = 1; studentIndex <= studentCount; studentIndex++) {
+                            const element = document.getElementById(`review${reviewIndex + 1}-student${studentIndex}`);
+                            if (element) {
+                                element.value = 0;
+                            }
+                        }
+                    }
+                });
+
+                console.log('Review data loaded successfully');
+
+            } catch (error) {
+                console.error('Error loading review data:', error);
+                showMessage('Error loading review data: ' + error.message, 'error');
+                
+                // Set all values to 0 as fallback
+                for (let review = 1; review <= 4; review++) {
+                    for (let student = 1; student <= studentCount; student++) {
+                        const element = document.getElementById(`review${review}-student${student}`);
+                        if (element) {
+                            element.value = 0;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Calculate final totals for each student
+        function calculateFinalTotals() {
+            try {
+                for (let i = 1; i <= studentCount; i++) {
+                    let total = 0;
+                    
+                    // Sum all review totals for this student
+                    for (let j = 1; j <= 4; j++) { // 4 reviews
+                        const element = document.getElementById(`review${j}-student${i}`);
+                        const reviewValue = element ? parseFloat(element.value) || 0 : 0;
+                        total += reviewValue;
+                    }
+                    
+                    // Set the final total
+                    const finalElement = document.getElementById(`final-student${i}`);
+                    if (finalElement) {
+                        finalElement.value = total;
+                    }
+                }
+                console.log('Final totals calculated successfully');
+            } catch (error) {
+                console.error('Error calculating final totals:', error);
+                showMessage('Error calculating final totals: ' + error.message, 'error');
+            }
+        }
+        
+        // Navigation to previous review
+        function previousReview() {
+            window.location.href = '/review4';
+        }
+        
+        // Submit form to generate PDF
+        async function submitForm() {
+            if (!currentGroupId) {
+                alert('Please load a group first');
+                return;
+            }
+            
+            try {
+                const submitBtn = document.getElementById('generate-pdf');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Generating PDF...';
+
+                const formData = new FormData(document.getElementById('form-data'));
+                const jsonData = Object.fromEntries(formData);
+                
+                // Ensure group_id is set
+                jsonData.group_id = currentGroupId;
+                
+                // Add student count and data to JSON
+                jsonData.student_count = studentCount;
+                jsonData.student_data = JSON.stringify(studentData);
+                
+                console.log('Submitting form data:', jsonData);
+
+                const response = await fetch('/generate-pdf-review5', {
+                    method: 'POST',
+                    body: JSON.stringify(jsonData),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                // Handle PDF download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Final_Review_Summary_${currentGroupId}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+
+                alert('PDF generated successfully!');
+
+            } catch (error) {
+                console.error('PDF generation failed:', error);
+                alert(`Failed to generate PDF: ${error.message}`);
+            } finally {
+                const submitBtn = document.getElementById('generate-pdf');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Generate Final PDF';
+                }
+            }
+        }
+
+        // Allow Enter key to trigger load
+        document.addEventListener("DOMContentLoaded", function () {
+            const groupIdInput = document.getElementById('group_id_select');
+            if (groupIdInput) {
+                groupIdInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        loadGroupData();
+                    }
+                });
+            }
+        });
+        
+        // Header hide/show on scroll functionality
+        let lastScrollTop = 0;
+        let scrollThreshold = 5;
+        let isHeaderVisible = true;
+
+        function handleScroll() {
+            const header = document.querySelector('.page-header');
+            const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
+                return;
+            }
+
+            // Hide header when scrolling down
+            if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
+                header.classList.add('hidden');
+                isHeaderVisible = false;
+            }
+            // Show header when scrolling up
+            else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
+                header.classList.remove('hidden');
+                isHeaderVisible = true;
+            }
+
+            // Optional: Add scrolled class for visual feedback
+            if (currentScrollTop > 80) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+
+            lastScrollTop = currentScrollTop;
+        }
+
+        // Throttling for better performance
+        let scrollTimer = null;
+        function throttledScroll() {
+            if (scrollTimer) return;
+            scrollTimer = setTimeout(() => {
+                handleScroll();
+                scrollTimer = null;
+            }, 10);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.addEventListener('scroll', throttledScroll, { passive: true });
+        });
+
+    </script>
+
+    <script>
+        let menuOpen = false;
+
+        function toggleMenu() {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const menuDropdown = document.getElementById('menuDropdown');
+            
+            menuOpen = !menuOpen;
+            
+            if (menuOpen) {
+                menuToggle.classList.add('active');
+                menuDropdown.classList.add('show');
+            } else {
+                menuToggle.classList.remove('active');
+                menuDropdown.classList.remove('show');
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menuContainer = document.querySelector('.menu-container');
+            
+            if (!menuContainer.contains(event.target) && menuOpen) {
+                toggleMenu();
+            }
+        });
+
+        // Close menu when pressing Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && menuOpen) {
+                toggleMenu();
+            }
+        });
+
+        // Highlight current page
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                if (item.getAttribute('href') === currentPath) {
+                    item.classList.add('current');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

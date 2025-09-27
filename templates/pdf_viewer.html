@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Repository - View & Download</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #047857;
+            transform: translateY(-2px);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8fafc;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+        
+        /* Filter Section Styling */
+        .filter-section {
+            padding: 20px 30px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 120px;
+        }
+        .filter-select:hover {
+            border-color: #4f46e5;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            color: #374151;
+            transition: all 0.2s ease;
+            min-width: 200px;
+        }
+        .filter-input:hover {
+            border-color: #4f46e5;
+        }
+        .filter-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .filter-clear {
+            background: #6b7280;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-clear:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+        
+        .pdf-section {
+            padding: 30px;
+        }
+        
+        .pdf-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .pdf-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .pdf-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .pdf-icon {
+            font-size: 3em;
+            color: #dc2626;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .pdf-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .pdf-details {
+            color: #64748b;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .pdf-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pdf-actions .btn {
+            flex: 1;
+            text-align: center;
+            min-width: 80px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification.success { background: #059669; }
+        .notification.error { background: #dc2626; }
+        .notification.info { background: #0ea5e9; }
+        .hidden { display: none; }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .filter-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .filter-group {
+                flex-direction: column;
+                text-align: center;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .pdf-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PDF Repository</h1>
+            <p>View and download generated PDF files</p>
+        </div>
+        
+        <div class="controls">
+            <button id="load-pdfs" class="btn btn-primary">Load PDFs</button>
+            <a href="/" class="btn" style="background: #6b7280; color: white; text-decoration: none;">← Back to Reviews</a>
+        </div>
+        
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-pdfs">-</div>
+                <div class="stat-label">Total PDFs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-size">-</div>
+                <div class="stat-label">Total Size</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="review-types">-</div>
+                <div class="stat-label">Review Types</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="filtered-count">-</div>
+                <div class="stat-label">Filtered Results</div>
+            </div>
+        </div>
+        
+        <div class="pdf-section">
+            <h2 id="content-title">PDF Files</h2>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label class="filter-label" for="search-input">Search:</label>
+                    <input type="text" id="search-input" class="filter-input" placeholder="Search Group ID">
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label" for="review-filter">Filter by Review:</label>
+                    <select id="review-filter" class="filter-select">
+                        <option value="">All Reviews</option>
+                        <option value="Review_1_">Review 1</option>
+                        <option value="Review_2_">Review 2</option>
+                        <option value="Review_3_">Review 3</option>
+                        <option value="Review_4_">Review 4</option>
+                        <option value="Review_5_">Review 5</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label" for="division-filter">Filter by Division:</label>
+                    <select id="division-filter" class="filter-select">
+                        <option value="">All Divisions</option>
+                        <option value="BIA">Division A (BIA)</option>
+                        <option value="BIB">Division B (BIB)</option>
+                    </select>
+                </div>
+                
+                <button id="clear-filters" class="filter-clear">Clear Filters</button>
+            </div>
+            
+            <div id="pdf-content" class="loading">
+                Click "Load PDFs" to view available PDF files
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PDFManager {
+            constructor() {
+                this.allPdfs = [];
+                this.filteredPdfs = [];
+                this.currentFilters = {
+                    search: '',
+                    review: '',
+                    division: ''
+                };
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.loadPDFs(); // Auto-load on page load
+            }
+            
+            setupEventListeners() {
+                document.getElementById('load-pdfs').addEventListener('click', () => this.loadPDFs());
+                
+                // Filter event listeners
+                document.getElementById('search-input').addEventListener('input', (e) => this.applyFilter('search', e.target.value));
+                document.getElementById('review-filter').addEventListener('change', (e) => this.applyFilter('review', e.target.value));
+                document.getElementById('division-filter').addEventListener('change', (e) => this.applyFilter('division', e.target.value));
+                document.getElementById('clear-filters').addEventListener('click', () => this.clearAllFilters());
+            }
+
+            async loadPDFs() {
+                try {
+                    document.getElementById('pdf-content').innerHTML = '<div class="loading">Loading PDF files...</div>';
+                    
+                    const response = await fetch('/list-pdfs');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.allPdfs = result.pdfs;
+                        this.filteredPdfs = [...this.allPdfs];
+                        this.updateStats(result.stats);
+                        this.renderPDFs();
+                        this.showNotification('PDFs loaded successfully', 'success');
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    this.showNotification('Error loading PDFs: ' + error.message, 'error');
+                    document.getElementById('pdf-content').innerHTML = '<div class="loading">Error loading PDF files</div>';
+                }
+            }
+
+            applyFilter(filterType, value) {
+                this.currentFilters[filterType] = value;
+                this.applyFilters();
+                
+                if (value) {
+                    const filterName = filterType === 'search' ? 'Search' : filterType === 'review' ? 'Review' : 'Division';
+                    this.showNotification(`Filtered by ${filterName}`, 'info');
+                }
+            }
+            
+            applyFilters() {
+                this.filteredPdfs = this.allPdfs.filter(pdf => {
+                    const searchMatch = !this.currentFilters.search || 
+                        pdf.name.toLowerCase().includes(this.currentFilters.search.toLowerCase());
+                    
+                    const reviewMatch = !this.currentFilters.review || 
+                        pdf.name.includes(this.currentFilters.review);
+                    
+                    // Fixed division matching to account for the exact pattern _BIA- or _BIB-
+                    const divisionMatch = !this.currentFilters.division || 
+                        pdf.name.includes(`_${this.currentFilters.division}-`);
+                    
+                    return searchMatch && reviewMatch && divisionMatch;
+                });
+                
+                this.updateFilteredStats();
+                this.renderPDFs();
+                this.updateContentTitle();
+            }
+            
+            clearAllFilters() {
+                this.currentFilters = { search: '', review: '', division: '' };
+                document.getElementById('search-input').value = '';
+                document.getElementById('review-filter').value = '';
+                document.getElementById('division-filter').value = '';
+                
+                this.filteredPdfs = [...this.allPdfs];
+                this.updateFilteredStats();
+                this.renderPDFs();
+                this.updateContentTitle();
+                
+                this.showNotification('All filters cleared', 'info');
+            }
+            
+            updateFilteredStats() {
+                document.getElementById('filtered-count').textContent = this.filteredPdfs.length;
+            }
+            
+            updateContentTitle() {
+                const titleElement = document.getElementById('content-title');
+                let title = 'PDF Files';
+                
+                const activeFilters = [];
+                if (this.currentFilters.search) activeFilters.push(`Search: "${this.currentFilters.search}"`);
+                if (this.currentFilters.review) {
+                    const reviewNames = {
+                        'Review_1_': 'Review 1',
+                        'Review_2_': 'Review 2', 
+                        'Review_3_': 'Review 3',
+                        'Review_4_': 'Review 4',
+                        'Review_5_': 'Review 5'
+                    };
+                    activeFilters.push(reviewNames[this.currentFilters.review] || this.currentFilters.review);
+                }
+                if (this.currentFilters.division) {
+                    const divisionNames = {
+                        'BIA': 'Division A (BIA)',
+                        'BIB': 'Division B (BIB)'
+                    };
+                    activeFilters.push(divisionNames[this.currentFilters.division] || `Division ${this.currentFilters.division}`);
+                }
+                
+                if (activeFilters.length > 0) {
+                    title += ` - Filtered by ${activeFilters.join(', ')}`;
+                }
+                
+                titleElement.textContent = title;
+            }
+            
+            updateStats(stats) {
+                document.getElementById('total-pdfs').textContent = stats.count;
+                document.getElementById('total-size').textContent = this.formatFileSize(stats.totalSize);
+                document.getElementById('filtered-count').textContent = this.allPdfs.length;
+                
+                // Calculate review types
+                const reviewTypes = new Set();
+                this.allPdfs.forEach(pdf => {
+                    if (pdf.name.includes('Review_1_')) reviewTypes.add('Review 1');
+                    if (pdf.name.includes('Review_2_')) reviewTypes.add('Review 2');
+                    if (pdf.name.includes('Review_3_')) reviewTypes.add('Review 3');
+                    if (pdf.name.includes('Review_4_')) reviewTypes.add('Review 4');
+                    if (pdf.name.includes('Review_5_')) reviewTypes.add('Review 5');
+                });
+                document.getElementById('review-types').textContent = reviewTypes.size;
+            }
+            
+            renderPDFs() {
+                if (!this.filteredPdfs.length) {
+                    if (this.allPdfs.length > 0) {
+                        document.getElementById('pdf-content').innerHTML = '<div class="loading">No PDFs match the current filter criteria</div>';
+                    } else {
+                        document.getElementById('pdf-content').innerHTML = '<div class="loading">No PDF files found</div>';
+                    }
+                    return;
+                }
+                
+                let gridHTML = '<div class="pdf-grid">';
+                
+                this.filteredPdfs.forEach(pdf => {
+                    const fileType = this.getFileType(pdf.name);
+                    
+                    gridHTML += `
+                        <div class="pdf-card">
+                            <div class="pdf-icon">📄</div>
+                            <div class="pdf-name">${pdf.name}</div>
+                            <div class="pdf-details">
+                                <div><strong>Size:</strong> ${this.formatFileSize(pdf.size)}</div>
+                                <div><strong>Modified:</strong> ${this.formatDate(pdf.modified)}</div>
+                                <div><strong>Type:</strong> ${fileType}</div>
+                            </div>
+                            <div class="pdf-actions">
+                                <a href="/view-pdf/${encodeURIComponent(pdf.name)}" class="btn btn-primary" target="_blank">
+                                    View
+                                </a>
+                                <a href="/download-pdf/${encodeURIComponent(pdf.name)}" class="btn btn-success" download>
+                                    Download
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                gridHTML += '</div>';
+                document.getElementById('pdf-content').innerHTML = gridHTML;
+            }
+            
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+
+            getFileType(filename) {
+                if (filename.includes('Review_1_')) return 'Review I';
+                if (filename.includes('Review_2_')) return 'Review II';
+                if (filename.includes('Review_3_')) return 'Review III';
+                if (filename.includes('Review_4_')) return 'Review IV';
+                if (filename.includes('Review_5_')) return 'Review V';
+                return 'PDF Document';
+            }
+            
+            showNotification(message, type = 'success') {
+                // Remove existing notifications
+                document.querySelectorAll('.notification').forEach(n => n.remove());
+                
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 4000);
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.pdfManager = new PDFManager();
+        });
+    </script>
+</body>
+</html>

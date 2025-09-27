@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Project Review System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2.75rem 2.75rem 2.25rem 2.75rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            color: #2c3e50;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #6c757d;
+            font-size: 1.07rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1.08rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.07);
+            background: white;
+        }
+
+        /* Eye icon for password toggle */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .password-wrapper input {
+            padding-right: 38px;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            height: 26px;
+            width: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-password svg {
+            display: block;
+            width: 24px;
+            height: 24px;
+            fill: #888;
+        }
+        .toggle-password.active svg {
+            fill: #764ba2;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.14rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.18);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 1.1rem;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: #764ba2;
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            color: #721c24;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.2);
+            color: #155724;
+        }
+
+        .role-info {
+            background: rgba(23, 162, 184, 0.1);
+            border: 1px solid rgba(23, 162, 184, 0.2);
+            color: #0c5460;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.93rem;
+        }
+        .role-info h4 {
+            margin-bottom: 0.5rem;
+            color: #0c5460;
+        }
+        .role-info ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 1.35rem;
+                margin: 1rem;
+            }
+            .login-header h1 {
+                font-size: 1.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🔐 Login</h1>
+            <p>Project Review Management System</p>
+        </div>
+        <div class="role-info">
+            <h4>Access Levels:</h4>
+            <ul>
+                <li><strong>Admin:</strong> Full system access including database management</li>
+                <li><strong>User:</strong> Review pages and limited dashboard access only</li>
+            </ul>
+        </div>
+        <div id="alert" class="alert"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group password-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                    <span class="toggle-password" id="togglePassword" tabindex="0" aria-label="Show password">
+                        <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 5c-7.633 0-11 7-11 7s3.367 7 11 7 11-7 11-7-3.367-7-11-7zm0 12c-2.757 0-5-2.243-5-5s2.243-5 5-5 5 2.243 5 5-2.243 5-5 5zm0-8c-1.654 0-3 1.346-3 3s1.346 3 3 3 3-1.346 3-3-1.346-3-3-3z"/></svg>
+                        <svg id="eyeClosed" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M2.393 1.379l19.799 19.799-1.414 1.414-3.106-3.107c-1.436.75-3.043 1.201-4.672 1.201-7.633 0-11-7-11-7 1.455-2.956 4.495-6.624 9.016-7.511l-3.239-3.239 1.414-1.414zm6.123 6.123l-1.697-1.697c-2.685.797-5.094 2.84-7.031 6.195 1.455 2.956 4.495 6.624 9.016 7.511l-1.494-1.494c-2.458-.628-4.583-2.361-6.05-4.017 1.227-1.642 2.646-3.242 4.255-4.576zm10.281 10.282l-1.741-1.74c.456-.279.874-.591 1.265-.927 1.227-1.642 2.646-3.242 4.255-4.576-1.227-1.642-2.646-3.242-4.255-4.576-2.455 2.413-5.783 3.57-9.059 3.382l-1.498-1.498c.947.074 1.905.115 2.848.115 2.757 0 5-2.243 5-5 0-.942-.041-1.9-.115-2.848l-1.498-1.498c2.955.939 5.186 2.407 6.984 4.242zm-7.797-7.797c.062.349.089.706.089 1.065 0 2.757 2.243 5 5 5 .359 0 .716-.027 1.065-.089l-1.433-1.433c-.227.032-.459.047-.699.047-1.654 0-3-1.346-3-3 0-.24.016-.473.046-.7zm9.73 9.731c2.91-1.127 5.119-3.355 6.984-6.242-2.685.797-5.094 2.84-7.031 6.195z"/></svg>
+                    </span>
+                </div>
+            </div>
+            <button type="submit" id="loginBtn" class="login-btn">
+                <span class="btn-text">Sign In</span>
+            </button>
+        </form>
+        <!-- Add this section in your login form, after the login button -->
+<div class="register-link" style="text-align: center; margin-top: 20px;">
+    <p>Don't have an account? <a href="/auth/register" style="color: #667eea; text-decoration: none; font-weight: 500;">Create one here</a></p>
+</div>
+
+        <div class="forgot-password">
+            <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
+        </div>
+    </div>
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const alert = document.getElementById('alert');
+        // Password show/hide logic
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeOpen = document.getElementById('eyeOpen');
+        const eyeClosed = document.getElementById('eyeClosed');
+        let isPasswordVisible = false;
+
+        togglePassword.addEventListener('click', function() {
+            isPasswordVisible = !isPasswordVisible;
+            passwordInput.type = isPasswordVisible ? 'text' : 'password';
+            togglePassword.classList.toggle('active', isPasswordVisible);
+            eyeOpen.style.display = isPasswordVisible ? 'none' : '';
+            eyeClosed.style.display = isPasswordVisible ? '' : 'none';
+        });
+
+        togglePassword.addEventListener('keydown', function(e) {
+            if(e.key === 'Enter' || e.key === ' '){
+                togglePassword.click();
+                e.preventDefault();
+            }
+        });
+
+        function showAlert(message, type = 'error') {
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            if (type === 'success') {
+                setTimeout(() => { alert.style.display = 'none'; }, 3000);
+            }
+        }
+        function hideAlert() { alert.style.display = 'none'; }
+        function setLoading(loading) {
+            loginBtn.disabled = loading;
+            const btnText = loginBtn.querySelector('.btn-text');
+            btnText.textContent = loading ? 'Signing in...' : 'Sign In';
+        }
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideAlert();
+            const formData = new FormData(loginForm);
+            const username = formData.get('username').trim();
+            const password = formData.get('password');
+            if (!username || !password) {
+                showAlert('Please fill in all fields');
+                return;
+            }
+            setLoading(true);
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(`Welcome back, ${data.username}!`, 'success');
+                    setTimeout(() => { window.location.href = data.redirect; }, 1000);
+                } else {
+                    showAlert(data.error || 'Login failed');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        });
+        function showForgotPassword() {
+            if (confirm('Redirect to password recovery page?')) {
+                window.location.href = '/auth/forgot-password';
+            }
+        }
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('error');
+                hideAlert();
+            });
+        });
+        // Demo credentials info (remove in production)
+        console.log('Demo Credentials:');
+        console.log('Admin: admin / admin123');
+        console.log('User: evaluator1 / user123');
+    </script>
+</body>
+</html>

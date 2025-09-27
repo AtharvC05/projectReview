@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Project Scheduler</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 300;
+        }
+        .controls {
+            padding: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+        }
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #047857;
+            transform: translateY(-2px);
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8fafc;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 4px;
+        }
+        
+        /* Filter Section Styling */
+        .filter-section {
+            padding: 20px 30px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 20px;
+            /*align-items: center;*/
+            /*justify-content: center;*/
+            flex-wrap: wrap;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .filter-select:hover {
+            border-color: #4f46e5;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .filter-clear {
+            background: #6b7280;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .filter-clear:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+        
+        .schedule-table {
+            padding: 30px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+        .batch-header {
+            background: #4f46e5 !important;
+            color: white;
+            font-weight: bold;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification.success { background: #059669; }
+        .notification.error { background: #dc2626; }
+        .notification.info { background: #0ea5e9; }
+        .hidden { display: none; }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            .filter-section {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .filter-group {
+                flex-direction: column;
+                text-align: center;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗓️ Smart Project Scheduler</h1>
+            <p>Intelligent batch management for project reviews with automated assignments</p>
+        </div>
+        
+        <div class="controls">
+            <button id="load-schedule" class="btn btn-primary">📋 Load Current Schedule</button>
+            <button id="download-pdf" class="btn btn-success">📄 Download PDF</button>
+            <a href="/" class="btn" style="background: #6b7280; color: white; text-decoration: none;">← Back to Reviews</a>
+        </div>
+        
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-groups">-</div>
+                <div class="stat-label">Total Groups</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="scheduled-groups">-</div>
+                <div class="stat-label">Scheduled Groups</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-tracks">-</div>
+                <div class="stat-label">Active Batches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="filtered-count">-</div>
+                <div class="stat-label">Filtered Results</div>
+            </div>
+        </div>
+        
+        <div class="schedule-table">
+            <h2 id="table-title">📊 Current Batch Schedule</h2>
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label class="filter-label" for="batch-filter">Filter by Batch:</label>
+                    <select id="batch-filter" class="filter-select">
+                        <option value="">All Batches</option>
+                        <option value="1">Batch 1</option>
+                        <option value="2">Batch 2</option>
+                        <option value="3">Batch 3</option>
+                        <option value="4">Batch 4</option>
+                        <option value="5">Batch 5</option>
+                        <option value="6">Batch 6</option>
+                        <option value="7">Batch 7</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="filter-label" for="division-filter">Filter by Division:</label>
+                    <select id="division-filter" class="filter-select">
+                        <option value="">All Divisions</option>
+                        <option value="A">Division A</option>
+                        <option value="B">Division B</option>
+                    </select>
+                </div>
+                
+                <button id="clear-filters" class="filter-clear">Clear Filters</button>
+            </div>
+            <div id="schedule-content" class="loading">
+                Click "Load Current Schedule" to view the current batch scheduling data
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ScheduleManager {
+            constructor() {
+                this.scheduleData = [];
+                this.filteredData = [];
+                this.currentFilters = {
+                    batch: '',
+                    division: ''
+                };
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.loadSchedule(); // Auto-load on page load
+            }
+            
+            setupEventListeners() {
+                document.getElementById('load-schedule').addEventListener('click', () => this.loadSchedule());
+                document.getElementById('download-pdf').addEventListener('click', () => this.downloadPDF());
+                
+                // Filter event listeners
+                document.getElementById('batch-filter').addEventListener('change', (e) => this.applyFilter('batch', e.target.value));
+                document.getElementById('division-filter').addEventListener('change', (e) => this.applyFilter('division', e.target.value));
+                document.getElementById('clear-filters').addEventListener('click', () => this.clearAllFilters());
+            }
+            
+            async loadSchedule() {
+                try {
+                    document.getElementById('schedule-content').innerHTML = '<div class="loading">Loading schedule data...</div>';
+                    
+                    const response = await fetch('/api/schedule-data');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.scheduleData = result.data;
+                        this.filteredData = [...this.scheduleData]; // Initialize filtered data
+                        this.updateStats(result.stats);
+                        this.renderScheduleTable();
+                        this.showNotification('Schedule loaded successfully', 'success');
+                        
+                        // Debug logging to verify evaluator data
+                        console.log('Sample schedule data:', this.scheduleData[0]);
+                        console.log('Evaluator stats:', result.stats.evaluator_stats);
+                    } else {
+                        throw new Error(result.error);
+                    }
+                } catch (error) {
+                    this.showNotification('Error loading schedule: ' + error.message, 'error');
+                    document.getElementById('schedule-content').innerHTML = '<div class="loading">Error loading schedule data</div>';
+                }
+            }
+            
+            async downloadPDF() {
+                try {
+                    this.showNotification('Generating PDF...', 'info');
+                    
+                    const response = await fetch('/api/generate-schedule-pdf', {
+                        method: 'POST'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to generate PDF');
+                    }
+                    
+                    // Create download link
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `batch_schedule_${new Date().toISOString().split('T')[0]}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    
+                    this.showNotification('PDF downloaded successfully!', 'success');
+                } catch (error) {
+                    this.showNotification('Error downloading PDF: ' + error.message, 'error');
+                }
+            }
+            
+            // Filter functionality
+            applyFilter(filterType, value) {
+                this.currentFilters[filterType] = value;
+                this.applyFilters();
+                
+                if (value) {
+                    const filterName = filterType === 'batch' ? 'Batch' : 'Division';
+                    this.showNotification(`Filtered by ${filterName}: ${value}`, 'info');
+                } else {
+                    this.showNotification(`${filterType} filter cleared`, 'info');
+                }
+            }
+            
+            applyFilters() {
+                this.filteredData = this.scheduleData.filter(item => {
+                    const batchMatch = !this.currentFilters.batch || item.track == this.currentFilters.batch;
+                    const divisionMatch = !this.currentFilters.division || item.division === this.currentFilters.division;
+                    
+                    return batchMatch && divisionMatch;
+                });
+                
+                this.updateFilteredStats();
+                this.renderScheduleTable();
+                this.updateTableTitle();
+            }
+            
+            clearAllFilters() {
+                this.currentFilters = { batch: '', division: '' };
+                document.getElementById('batch-filter').value = '';
+                document.getElementById('division-filter').value = '';
+                
+                this.filteredData = [...this.scheduleData];
+                this.updateFilteredStats();
+                this.renderScheduleTable();
+                this.updateTableTitle();
+                
+                this.showNotification('All filters cleared', 'info');
+            }
+            
+            updateFilteredStats() {
+                document.getElementById('filtered-count').textContent = this.filteredData.length;
+            }
+            
+            updateTableTitle() {
+                const titleElement = document.getElementById('table-title');
+                let title = '📊 Current Batch Schedule';
+                
+                const activeFilters = [];
+                if (this.currentFilters.batch) activeFilters.push(`Batch ${this.currentFilters.batch}`);
+                if (this.currentFilters.division) activeFilters.push(`Division ${this.currentFilters.division}`);
+                
+                if (activeFilters.length > 0) {
+                    title += ` - Filtered by ${activeFilters.join(', ')}`;
+                }
+                
+                titleElement.textContent = title;
+            }
+            
+            updateStats(stats) {
+                document.getElementById('total-groups').textContent = stats.total_groups;
+                document.getElementById('scheduled-groups').textContent = stats.scheduled_groups;
+                document.getElementById('total-tracks').textContent = stats.total_tracks;
+                document.getElementById('filtered-count').textContent = this.scheduleData.length;
+                
+                // Add evaluator statistics display
+                if (stats.evaluator_stats) {
+                    const evalStats = stats.evaluator_stats;
+                    console.log(`Evaluator Statistics - Total: ${evalStats.total_projects}, With Both Evaluators: ${evalStats.with_both_evals}`);
+                }
+            }
+            
+            renderScheduleTable() {
+                if (!this.filteredData.length) {
+                    if (this.scheduleData.length > 0) {
+                        document.getElementById('schedule-content').innerHTML = '<div class="loading">No data matches the current filter criteria</div>';
+                    } else {
+                        document.getElementById('schedule-content').innerHTML = '<div class="loading">No schedule data available</div>';
+                    }
+                    return;
+                }
+                
+                // Group by batch (track in backend)
+                const batchGroups = {};
+                this.filteredData.forEach(item => {
+                    const batch = item.track || 'Unassigned';
+                    if (!batchGroups[batch]) {
+                        batchGroups[batch] = [];
+                    }
+                    batchGroups[batch].push(item);
+                });
+                
+                let tableHTML = '<table class="table">';
+                
+                // Sort batches numerically
+                const sortedBatches = Object.keys(batchGroups).sort((a, b) => {
+                    if (a === 'Unassigned') return 1;
+                    if (b === 'Unassigned') return -1;
+                    return parseInt(a) - parseInt(b);
+                });
+                
+                sortedBatches.forEach(batch => {
+                    const batchData = batchGroups[batch];
+                    
+                    // Batch header with group count
+                    tableHTML += `
+                        <tr class="batch-header">
+                            <td colspan="7">Batch ${batch} (${batchData.length} groups)</td>
+                        </tr>
+                        <tr>
+                            <th>Group ID</th>
+                            <th>Division</th>
+                            <th>Project Title</th>
+                            <th>Guide</th>
+                            <th>Evaluator 1</th>
+                            <th>Evaluator 2</th>
+                            <th>Location</th>
+                        </tr>
+                    `;
+                    
+                    batchData.forEach(item => {
+                        const projectTitle = item.project_title ? 
+                            (item.project_title.length > 40 ? item.project_title.substring(0, 40) + '...' : item.project_title) : 
+                            'No title';
+                        
+                        // Use evaluator1 and evaluator2 from the corrected backend
+                        const evaluator1 = item.evaluator1 || item.evaluator1_name || '-';
+                        const evaluator2 = item.evaluator2 || item.evaluator2_name || '-';
+                        
+                        tableHTML += `
+                            <tr>
+                                <td><strong>${item.group_id}</strong></td>
+                                <td><span style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">${item.division || '-'}</span></td>
+                                <td title="${item.project_title || 'No title'}">${projectTitle}</td>
+                                <td>${item.assigned_guide || item.guide_name || '-'}</td>
+                                <td>${evaluator1}</td>
+                                <td>${evaluator2}</td>
+                                <td>${item.location || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                });
+                
+                tableHTML += '</table>';
+                document.getElementById('schedule-content').innerHTML = tableHTML;
+                
+                // Log summary
+                console.log(`Rendered schedule for ${this.filteredData.length} groups across ${sortedBatches.length} batches`);
+            }
+            
+            showNotification(message, type = 'success') {
+                // Remove existing notifications
+                document.querySelectorAll('.notification').forEach(n => n.remove());
+                
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 4000);
+            }
+            
+            // Get current filter statistics
+            getFilterStats() {
+                const stats = {
+                    totalGroups: this.scheduleData.length,
+                    filteredGroups: this.filteredData.length,
+                    currentFilters: this.currentFilters,
+                    batchCounts: {},
+                    divisionCounts: {}
+                };
+                
+                this.filteredData.forEach(item => {
+                    const batch = item.track || 'Unassigned';
+                    const division = item.division || 'Unknown';
+                    
+                    stats.batchCounts[batch] = (stats.batchCounts[batch] || 0) + 1;
+                    stats.divisionCounts[division] = (stats.divisionCounts[division] || 0) + 1;
+                });
+                
+                return stats;
+            }
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.scheduleManager = new ScheduleManager();
+        });
+
+        // Global functions for potential HTML button integration
+        function loadSchedule() {
+            if (window.scheduleManager) {
+                window.scheduleManager.loadSchedule();
+            }
+        }
+
+        function downloadPDF() {
+            if (window.scheduleManager) {
+                window.scheduleManager.downloadPDF();
+            }
+        }
+
+        // Filter helper functions
+        function filterByBatch(batchNumber) {
+            if (window.scheduleManager) {
+                document.getElementById('batch-filter').value = batchNumber;
+                window.scheduleManager.applyFilter('batch', batchNumber);
+            }
+        }
+
+        function filterByDivision(division) {
+            if (window.scheduleManager) {
+                document.getElementById('division-filter').value = division;
+                window.scheduleManager.applyFilter('division', division);
+            }
+        }
+
+        function clearFilters() {
+            if (window.scheduleManager) {
+                window.scheduleManager.clearAllFilters();
+            }
+        }
+
+        function getFilterStats() {
+            if (window.scheduleManager) {
+                const stats = window.scheduleManager.getFilterStats();
+                console.log('Current Filter Statistics:', stats);
+                return stats;
+            }
+        }
+    </script>
+</body>
+</html>
