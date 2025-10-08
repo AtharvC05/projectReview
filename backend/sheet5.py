@@ -3,26 +3,17 @@ import os
 import mysql.connector
 import logging
 from datetime import datetime
+from backend.db import connect_db
 
 logger = logging.getLogger(__name__)
 
-def connect_db():
-    """Database connection with error handling."""
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root", 
-            password="1234",
-            database="project_review1",
-            autocommit=True,
-        )
-    except mysql.connector.Error as e:
-        logger.error(f"Database connection error: {e}")
-        raise
+def _db():
+    """Shared DB connection for this sheet (default via env)."""
+    return connect_db()
 
 def fetch_project_details(group_id):
     """Fetch project and members info from DB; raise error if not found."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -67,7 +58,7 @@ def fetch_project_details(group_id):
 
 def fetch_review_totals(group_id):
     """Fetch review totals from the responses table for all 4 reviews with dynamic student support."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:

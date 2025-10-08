@@ -4,27 +4,18 @@ import mysql.connector
 import logging
 from datetime import datetime
 from flask import Flask, request, jsonify
+from backend.db import connect_db
 
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
 
-def connect_db():
-    """Database connection with error handling."""
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root", 
-            password="1234",
-            database="project_review",
-            autocommit=True,
-        )
-    except mysql.connector.Error as e:
-        logger.error(f"Database connection error: {e}")
-        raise
+def _db():
+    """Shared DB connection for this sheet using env/default DB."""
+    return connect_db()
 
 def fetch_project_details(group_id):
     """Fetch project and members info from DB; raise error if not found."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -61,8 +52,8 @@ def fetch_project_details(group_id):
         "mentor_name": project.get("mentor_name", ""),
         "mentor_email": project.get("mentor_email", ""),
         "mentor_mobile": project.get("mentor_mobile", ""),
-        "r1name": project.get("evaluator1_name", ""),
-        "r2name": project.get("evaluator2_name", ""),
+        "r1_name": project.get("evaluator1_name", ""),  # Reviewer 1
+        "r2_name": project.get("evaluator2_name", ""), 
         "members": members,
     }
 
@@ -250,8 +241,8 @@ def generate_fillable_pdf(form_data, base_template_dir="pdf_template"):
         "mentor_name": str(project_info.get("mentor_name") or ""),
         "mentor_email": str(project_info.get("mentor_email") or ""),
         "mentor_mobile": str(project_info.get("mentor_mobile") or ""),
-        "r1name": str(project_info.get("r1_name") or ""),
-        "r2name": str(project_info.get("r2_name") or ""),
+        "r1_name": str(project_info.get("r1_name") or ""),
+        "r2_name": str(project_info.get("r2_name") or ""),
     }
 
     # Debug: Print what's being set for date field
@@ -329,7 +320,7 @@ def save_responses():
     if not group_id or not isinstance(responses, dict):
         return jsonify({"error": "Invalid payload"}), 400
 
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
 
     try:
@@ -351,7 +342,7 @@ def save_responses():
 # ---- Fetch Responses ----
 @app.route("/get_responses/<group_id>", methods=["GET"])
 def get_responses(group_id):
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
 
     try:

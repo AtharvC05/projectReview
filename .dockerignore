@@ -1,0 +1,16 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+.venv
+venv
+node_modules
+*.log
+*.sqlite3
+generated_pdfs/*.pdf
+admin_files/
+stored_files/*.xlsx
+stored_files/*.json
+pdf_template/*.odg
+pdf_template/*.docx
+

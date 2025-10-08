@@ -3,26 +3,17 @@ import os
 import mysql.connector
 import logging
 from datetime import datetime
+from backend.db import connect_db
 
 logger = logging.getLogger(__name__)
 
-def connect_db():
-    """Database connection with error handling."""
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root", 
-            password="1234",
-            database="project_review1",
-            autocommit=True,
-        )
-    except mysql.connector.Error as e:
-        logger.error(f"Database connection error: {e}")
-        raise
+def _db():
+    """Shared DB connection for this sheet (default via env)."""
+    return connect_db()
 
 def fetch_project_details(group_id):
     """Fetch project and members info from DB; raise error if not found."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -265,9 +256,9 @@ def generate_3_pdf(form_data, template_dir="pdf_template"):
     # Map form responses for Review III questions
     que_to_pdf_field_map = {
         # Section 3.1 questions (ID fields for checkboxes/radio buttons)
-        'que_1.1': '3.1.1id', 'que_1.2': '3.1.2id', 'que_1.3': '3.1.3id',
-        'que_1.4': '3.1.4id', 'que_1.5': '3.1.5id', 'que_2.1': '3.1.6id',
-        'que_2.2': '3.1.7id', 
+        'que_3.1.1': '3.1.1id', 'que_3.1.2': '3.1.2id', 'que_3.1.3': '3.1.3id',
+        'que_3.1.4': '3.1.4id', 'que_3.1.5': '3.1.5id', 'que_3.1.6': '3.1.6id',
+        'que_3.1.7': '3.1.7id', 
         'ds1':'3.1.1','ds2':'3.1.2','ds3':'3.1.3','ds4':'3.1.4','ds5':'3.1.5',
         'cd1':'3.2.1','cd2':'3.2.2','cd3':'3.2.3','cd4':'3.2.4','cd5':'3.2.5',
         'f31':'3.3.1','f32':'3.3.2','f33':'3.3.3','f34':'3.3.4','f35':'3.3.5',
@@ -325,7 +316,7 @@ def save_attendance_data(group_id, attendance_data):
     if not group_id or not attendance_data:
         return
     
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -353,7 +344,7 @@ def save_attendance_data(group_id, attendance_data):
 
 def fetch_attendance_data(group_id):
     """Fetch Review-III attendance data for a group."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:

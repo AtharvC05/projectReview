@@ -329,8 +329,12 @@ def process_division_enhanced_with_normalization(df, division_name):
     
     for i, row in df.iterrows():
         try:
-            # Use normalized column names
+            # Use normalized column names - handle Series
             group_no_value = row.get('Group No.', '')
+            # Convert Series to scalar if needed
+            if isinstance(group_no_value, pd.Series):
+                group_no_value = group_no_value.iloc[0] if not group_no_value.empty else ''
+            
             if pd.notnull(group_no_value) and str(group_no_value).strip():
                 group_id = str(group_no_value).strip()
                 
@@ -343,10 +347,26 @@ def process_division_enhanced_with_normalization(df, division_name):
                 
                 # Insert project data with normalized column access
                 try:
-                    project_domain = str(row.get('Project Domain', '')).strip()[:255] if pd.notnull(row.get('Project Domain', '')) else ""
-                    project_title = str(row.get('Title of the Project', '')).strip()[:500] if pd.notnull(row.get('Title of the Project', '')) else ""
-                    sponsor_company = str(row.get('Name of the sponsored company ', '')).strip()[:255] if pd.notnull(row.get('Name of the sponsored company ', '')) else ""
-                    guide_name = str(row.get('Name of the Guide', '')).strip()[:100] if pd.notnull(row.get('Name of the Guide', '')) else ""
+                    # Handle potential Series for all project fields
+                    project_domain_val = row.get('Project Domain', '')
+                    if isinstance(project_domain_val, pd.Series):
+                        project_domain_val = project_domain_val.iloc[0] if not project_domain_val.empty else ''
+                    project_domain = str(project_domain_val).strip()[:255] if pd.notnull(project_domain_val) else ""
+                    
+                    project_title_val = row.get('Title of the Project', '')
+                    if isinstance(project_title_val, pd.Series):
+                        project_title_val = project_title_val.iloc[0] if not project_title_val.empty else ''
+                    project_title = str(project_title_val).strip()[:500] if pd.notnull(project_title_val) else ""
+                    
+                    sponsor_company_val = row.get('Name of the sponsored company ', '')
+                    if isinstance(sponsor_company_val, pd.Series):
+                        sponsor_company_val = sponsor_company_val.iloc[0] if not sponsor_company_val.empty else ''
+                    sponsor_company = str(sponsor_company_val).strip()[:255] if pd.notnull(sponsor_company_val) else ""
+                    
+                    guide_name_val = row.get('Name of the Guide', '')
+                    if isinstance(guide_name_val, pd.Series):
+                        guide_name_val = guide_name_val.iloc[0] if not guide_name_val.empty else ''
+                    guide_name = str(guide_name_val).strip()[:100] if pd.notnull(guide_name_val) else ""
                     
                     cur.execute(
                         """INSERT IGNORE INTO projects 
@@ -363,14 +383,28 @@ def process_division_enhanced_with_normalization(df, division_name):
                     logger.error(f"Error inserting project {group_id}: {str(project_error)}")
             
             # Process member data with normalized column access
+            # Handle potential Series by using .iloc[0] to get scalar values
+            roll_no_val = row.get('Roll No.', '')
+            student_name_val = row.get('Name of the group member', '')
+            
+            # Convert Series to scalar if needed
+            if isinstance(roll_no_val, pd.Series):
+                roll_no_val = roll_no_val.iloc[0] if not roll_no_val.empty else ''
+            if isinstance(student_name_val, pd.Series):
+                student_name_val = student_name_val.iloc[0] if not student_name_val.empty else ''
+            
             if (group_id and 
-                pd.notnull(row.get('Roll No.', '')) and 
-                pd.notnull(row.get('Name of the group member', ''))):
+                pd.notnull(roll_no_val) and str(roll_no_val).strip() and
+                pd.notnull(student_name_val) and str(student_name_val).strip()):
                 
                 try:
-                    roll_no = str(row.get('Roll No.', '')).strip()
-                    student_name = str(row.get('Name of the group member', '')).strip()[:100]
-                    contact_details = str(row.get('Contact details', '')).strip() if pd.notnull(row.get('Contact details', '')) else ""
+                    roll_no = str(roll_no_val).strip()
+                    student_name = str(student_name_val).strip()[:100]
+                    
+                    contact_val = row.get('Contact details', '')
+                    if isinstance(contact_val, pd.Series):
+                        contact_val = contact_val.iloc[0] if not contact_val.empty else ''
+                    contact_details = str(contact_val).strip() if pd.notnull(contact_val) else ""
                     
                     if roll_no and student_name:
                         cur.execute(

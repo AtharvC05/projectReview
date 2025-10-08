@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Final Review Summary</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
 </head>
+
 <body>
-     <a href="/auth/logout" class="logout-btn">Logout</a>
+    <script src="{{ url_for('static', filename='js/review-common.js') }}"></script>
+    <a href="/auth/logout" class="logout-btn">Logout</a>
     <div class="page-header">
         <div class="header-left"></div>
         <div class="header-center">
@@ -19,7 +22,7 @@
                 <span class="menu-line"></span>
                 <span class="menu-line"></span>
             </button>
-            
+
             <div class="menu-dropdown" id="menuDropdown">
                 <!-- Database Management -->
                 <a href="/data-manager" class="menu-item">
@@ -35,35 +38,35 @@
                     Attendance
                 </a>
                 <div class="menu-divider"></div>
-                
+
                 <!-- Review Pages -->
                 <a href="/review1" class="menu-item">
                     <span class="icon">📝</span>
                     Review I - Scope
                 </a>
-                
+
                 <a href="/review2" class="menu-item">
                     <span class="icon">🎨</span>
                     Review II - Design
                 </a>
-                
+
                 <a href="/review3" class="menu-item">
                     <span class="icon">⚙️</span>
                     Review III - Implementation
                 </a>
-                
+
                 <a href="/review4" class="menu-item">
                     <span class="icon">🧪</span>
                     Review IV - Testing
                 </a>
-                
+
                 <a href="/review5" class="menu-item current">
                     <span class="icon">📊</span>
                     Review V - Final
                 </a>
-                
+
                 <div class="menu-divider"></div>
-                
+
                 <!-- Additional Options -->
                 <a href="/" class="menu-item">
                     <span class="icon">🏠</span>
@@ -78,17 +81,18 @@
         <div class="group-selection">
             <label for="group_id_select">Select Group ID:</label>
             <div class="group-input-container">
-                <input type="text" id="group_id_select" placeholder="Enter Group ID (e.g., BIA-01)" required autocomplete="off">
+                <input type="text" id="group_id_select" placeholder="Enter Group ID (e.g., BIA-01)" required
+                    autocomplete="off">
                 <button type="button" class="load-btn" onclick="loadGroupData()">Load Review Data</button>
             </div>
             <div id="status-message"></div>
         </div>
 
         <form id="form-data" style="display:none;">
-            
+
             <label for="group_id">Group ID:</label>
             <input type="text" id="group_id" name="group_id" required readonly>
-            
+
             <div class="table-responsive">
                 <h3>Student Performance Summary</h3>
                 <table id="summary-table">
@@ -117,7 +121,7 @@
         let currentGroupId = null;
         let studentCount = 0;
         let studentData = [];
-        
+
         // Load group data from database
         async function loadGroupData() {
             const groupIdInput = document.getElementById('group_id_select');
@@ -125,66 +129,66 @@
                 showMessage('Group ID input not found in DOM', 'error');
                 return;
             }
-            
+
             const groupId = groupIdInput.value.trim();
             if (!groupId) {
                 showMessage('Please enter a Group ID', 'error');
                 return;
             }
-            
+
             try {
                 // Show loading state
                 const loadBtn = document.querySelector('.load-btn');
                 loadBtn.disabled = true;
                 loadBtn.textContent = 'Loading...';
                 loadBtn.classList.add('loading');
-                
+
                 clearMessage();
-                
+
                 // First, get student count and data
                 const studentsResponse = await fetch(`/api/group-students?group_id=${encodeURIComponent(groupId)}`);
                 if (!studentsResponse.ok) {
                     const errorData = await studentsResponse.json();
                     throw new Error(errorData.error || 'Failed to fetch student data');
                 }
-                
+
                 const studentsData = await studentsResponse.json();
                 studentData = studentsData.students;
                 studentCount = studentData.length;
-                
+
                 if (studentCount === 0) {
                     throw new Error('No students found for this group ID');
                 }
-                
+
                 console.log('Student data:', studentData);
                 console.log('Student count:', studentCount);
-                
+
                 // Generate dynamic table
                 generateDynamicTable();
-                
+
                 // Then fetch review totals
                 const response = await fetch(`/api/review-totals?group_id=${encodeURIComponent(groupId)}`);
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Failed to fetch review totals');
                 }
-                
+
                 const data = await response.json();
                 console.log('API Response:', data);
                 console.log('Review Totals:', data.review_totals);
-                
+
                 currentGroupId = groupId;
-                
+
                 // Update the form with database data
                 document.getElementById('group_id').value = groupId;
-                loadReviewDataFromAPI(data.review_totals);
+                await loadReviewDataFromAPI(data.review_totals, groupId);
                 calculateFinalTotals();
-                
+
                 // Show the form
                 document.getElementById('form-data').style.display = 'block';
-                
+
                 showMessage(`Review data loaded successfully for Group ${groupId} (${studentCount} students)`, 'success');
-                
+
             } catch (error) {
                 console.error('Error loading group data:', error);
                 showMessage(`Error loading group data: ${error.message}`, 'error');
@@ -196,32 +200,32 @@
                 loadBtn.classList.remove('loading');
             }
         }
-        
+
         // Generate dynamic table based on student count
         function generateDynamicTable() {
             const tableHeader = document.getElementById('table-header');
             const tableBody = document.getElementById('table-body');
-            
+
             // Clear existing content
             tableHeader.innerHTML = '';
             tableBody.innerHTML = '';
-            
+
             // Generate header
             const headerRow1 = document.createElement('tr');
             const headerRow2 = document.createElement('tr');
-            
+
             // Review Sheet column
             const reviewSheetHeader = document.createElement('th');
             reviewSheetHeader.rowSpan = 2;
             reviewSheetHeader.textContent = 'Review Sheet';
             headerRow1.appendChild(reviewSheetHeader);
-            
+
             // Students header
             const studentsHeader = document.createElement('th');
             studentsHeader.colSpan = studentCount;
             studentsHeader.textContent = `Students (Total Marks)`;
             headerRow1.appendChild(studentsHeader);
-            
+
             // Individual student headers
             for (let i = 0; i < studentCount; i++) {
                 const studentHeader = document.createElement('th');
@@ -230,21 +234,21 @@
                 studentHeader.title = studentData[i] ? `Roll No: ${studentData[i].roll_no}` : '';
                 headerRow2.appendChild(studentHeader);
             }
-            
+
             tableHeader.appendChild(headerRow1);
             tableHeader.appendChild(headerRow2);
-            
+
             // Generate body rows
             const reviews = ['Review I', 'Review II', 'Review III', 'Review IV'];
-            
+
             for (let reviewIndex = 0; reviewIndex < reviews.length; reviewIndex++) {
                 const row = document.createElement('tr');
-                
+
                 // Review name cell
                 const reviewCell = document.createElement('td');
                 reviewCell.textContent = reviews[reviewIndex];
                 row.appendChild(reviewCell);
-                
+
                 // Student score cells
                 for (let studentIndex = 0; studentIndex < studentCount; studentIndex++) {
                     const scoreCell = document.createElement('td');
@@ -257,18 +261,18 @@
                     scoreCell.appendChild(input);
                     row.appendChild(scoreCell);
                 }
-                
+
                 tableBody.appendChild(row);
             }
-            
+
             // Generate final total row
             const finalRow = document.createElement('tr');
             finalRow.className = 'final-total';
-            
+
             const finalLabelCell = document.createElement('td');
             finalLabelCell.textContent = 'Final Total (100M)';
             finalRow.appendChild(finalLabelCell);
-            
+
             for (let studentIndex = 0; studentIndex < studentCount; studentIndex++) {
                 const finalCell = document.createElement('td');
                 const input = document.createElement('input');
@@ -280,13 +284,13 @@
                 finalCell.appendChild(input);
                 finalRow.appendChild(finalCell);
             }
-            
+
             tableBody.appendChild(finalRow);
-            
+
             // Re-enable keyboard navigation for the new table
             enableKeyboardNavigation();
         }
-        
+
         // Enable keyboard navigation for table inputs
         function enableKeyboardNavigation() {
             const inputs = document.querySelectorAll("table input[type='number']");
@@ -343,23 +347,23 @@
                 });
             });
         }
-        
+
         // Show status messages
         function showMessage(message, type) {
             const statusDiv = document.getElementById('status-message');
             statusDiv.className = type === 'error' ? 'error-message' : 'success-message';
             statusDiv.textContent = message;
         }
-        
+
         // Clear status messages
         function clearMessage() {
             const statusDiv = document.getElementById('status-message');
             statusDiv.className = '';
             statusDiv.textContent = '';
         }
-        
-        // Load review data from API response
-        function loadReviewDataFromAPI(reviewTotals) {
+
+        // Load review data from API response - ENHANCED to fetch Review 3 from responses
+        async function loadReviewDataFromAPI(reviewTotals, groupId) {
             try {
                 // Check if reviewTotals exists
                 if (!reviewTotals) {
@@ -368,10 +372,12 @@
 
                 console.log('Loading review data:', reviewTotals);
 
-                // Load data for each review
-                const reviews = ['review1', 'review2', 'review3', 'review4'];
-                
-                reviews.forEach((reviewKey, reviewIndex) => {
+                // Load data for reviews 1, 2, and 4 from reviewTotals
+                const reviews = ['review1', 'review2', 'review4'];
+                const reviewIndices = [0, 1, 3]; // Maps to Review I, II, IV
+
+                reviews.forEach((reviewKey, idx) => {
+                    const reviewIndex = reviewIndices[idx];
                     if (reviewTotals[reviewKey]) {
                         for (let studentIndex = 1; studentIndex <= studentCount; studentIndex++) {
                             const element = document.getElementById(`review${reviewIndex + 1}-student${studentIndex}`);
@@ -391,12 +397,16 @@
                     }
                 });
 
+                // FETCH REVIEW 3 DATA FROM RESPONSES TABLE
+                console.log('Fetching Review 3 data from responses...');
+                await fetchReview3Data(groupId);
+
                 console.log('Review data loaded successfully');
 
             } catch (error) {
                 console.error('Error loading review data:', error);
                 showMessage('Error loading review data: ' + error.message, 'error');
-                
+
                 // Set all values to 0 as fallback
                 for (let review = 1; review <= 4; review++) {
                     for (let student = 1; student <= studentCount; student++) {
@@ -408,20 +418,70 @@
                 }
             }
         }
-        
+
+        // NEW FUNCTION: Fetch Review 3 data from responses table
+        async function fetchReview3Data(groupId) {
+            try {
+                const response = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+                if (!response.ok) {
+                    console.warn('No Review 3 responses found');
+                    return;
+                }
+
+                const data = await response.json();
+                const responses = data.responses || {};
+
+                console.log('Review 3 responses:', responses);
+
+                // Map Review 3 total fields (f81-f85) to students
+                // f81 = student 1, f82 = student 2, etc.
+                for (let studentIndex = 1; studentIndex <= studentCount; studentIndex++) {
+                    const totalFieldName = `f8${studentIndex}`;
+                    const totalValue = responses[totalFieldName];
+
+                    if (totalValue !== undefined && totalValue !== null && totalValue !== '') {
+                        const element = document.getElementById(`review3-student${studentIndex}`);
+                        if (element) {
+                            element.value = parseFloat(totalValue) || 0;
+                            console.log(`Set Review 3 Student ${studentIndex} total to: ${totalValue}`);
+                        }
+                    } else {
+                        // Set to 0 if not found
+                        const element = document.getElementById(`review3-student${studentIndex}`);
+                        if (element) {
+                            element.value = 0;
+                            console.log(`No Review 3 data for Student ${studentIndex}, set to 0`);
+                        }
+                    }
+                }
+
+                console.log('Review 3 data loaded from responses successfully');
+
+            } catch (error) {
+                console.error('Error fetching Review 3 data:', error);
+                // Set Review 3 to 0 for all students on error
+                for (let studentIndex = 1; studentIndex <= studentCount; studentIndex++) {
+                    const element = document.getElementById(`review3-student${studentIndex}`);
+                    if (element) {
+                        element.value = 0;
+                    }
+                }
+            }
+        }
+
         // Calculate final totals for each student
         function calculateFinalTotals() {
             try {
                 for (let i = 1; i <= studentCount; i++) {
                     let total = 0;
-                    
+
                     // Sum all review totals for this student
                     for (let j = 1; j <= 4; j++) { // 4 reviews
                         const element = document.getElementById(`review${j}-student${i}`);
                         const reviewValue = element ? parseFloat(element.value) || 0 : 0;
                         total += reviewValue;
                     }
-                    
+
                     // Set the final total
                     const finalElement = document.getElementById(`final-student${i}`);
                     if (finalElement) {
@@ -434,19 +494,19 @@
                 showMessage('Error calculating final totals: ' + error.message, 'error');
             }
         }
-        
+
         // Navigation to previous review
         function previousReview() {
             window.location.href = '/review4';
         }
-        
+
         // Submit form to generate PDF
         async function submitForm() {
             if (!currentGroupId) {
                 alert('Please load a group first');
                 return;
             }
-            
+
             try {
                 const submitBtn = document.getElementById('generate-pdf');
                 submitBtn.disabled = true;
@@ -454,14 +514,14 @@
 
                 const formData = new FormData(document.getElementById('form-data'));
                 const jsonData = Object.fromEntries(formData);
-                
+
                 // Ensure group_id is set
                 jsonData.group_id = currentGroupId;
-                
+
                 // Add student count and data to JSON
                 jsonData.student_count = studentCount;
                 jsonData.student_data = JSON.stringify(studentData);
-                
+
                 console.log('Submitting form data:', jsonData);
 
                 const response = await fetch('/generate-pdf-review5', {
@@ -504,14 +564,14 @@
         document.addEventListener("DOMContentLoaded", function () {
             const groupIdInput = document.getElementById('group_id_select');
             if (groupIdInput) {
-                groupIdInput.addEventListener('keypress', function(e) {
+                groupIdInput.addEventListener('keypress', function (e) {
                     if (e.key === 'Enter') {
                         loadGroupData();
                     }
                 });
             }
         });
-        
+
         // Header hide/show on scroll functionality
         let lastScrollTop = 0;
         let scrollThreshold = 5;
@@ -556,8 +616,9 @@
             }, 10);
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             window.addEventListener('scroll', throttledScroll, { passive: true });
+            if (window.initPageCommon) window.initPageCommon();
         });
 
     </script>
@@ -568,9 +629,9 @@
         function toggleMenu() {
             const menuToggle = document.querySelector('.menu-toggle');
             const menuDropdown = document.getElementById('menuDropdown');
-            
+
             menuOpen = !menuOpen;
-            
+
             if (menuOpen) {
                 menuToggle.classList.add('active');
                 menuDropdown.classList.add('show');
@@ -581,26 +642,26 @@
         }
 
         // Close menu when clicking outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const menuContainer = document.querySelector('.menu-container');
-            
+
             if (!menuContainer.contains(event.target) && menuOpen) {
                 toggleMenu();
             }
         });
 
         // Close menu when pressing Escape key
-        document.addEventListener('keydown', function(event) {
+        document.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' && menuOpen) {
                 toggleMenu();
             }
         });
 
         // Highlight current page
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const currentPath = window.location.pathname;
             const menuItems = document.querySelectorAll('.menu-item');
-            
+
             menuItems.forEach(item => {
                 if (item.getAttribute('href') === currentPath) {
                     item.classList.add('current');
@@ -609,4 +670,5 @@
         });
     </script>
 </body>
+
 </html>

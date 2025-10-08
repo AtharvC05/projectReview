@@ -30,7 +30,7 @@ class PDFFormConverter:
             return [x0+4, y0-300, x0 + 400, y1 ]
 
         # Comment fields - keep them within reasonable bounds
-        elif 'comment' in field_name.lower() or field_name == '5.c':
+        elif 'comment' in field_name.lower() or field_name == '2.c':
             return [x0, y0-18, x0 + 400, y1]
 
         # Name fields - make them 2 lines (increased height)
@@ -38,7 +38,7 @@ class PDFFormConverter:
           return [x0+5, y1-160, x1 +70, y1 +4]# Increased height for 2 lines
 
         # Marks fields in table - keep original width, center aligned
-        elif any(pattern in field_name for pattern in ['5.1', '5.2', '5.3', '5.4','5.5','5.6','5.7','5.8']):
+        elif any(pattern in field_name for pattern in ['2.1', '2.2', '2.3', '2.4','2.5','2.6','2.7','2.8']):
             return [x0, y0-3, x1, y0 + max(15, original_height)]
 
         # Default case - standard sizing
@@ -140,15 +140,15 @@ class PDFFormConverter:
                         NameObject("/Rect"):     ArrayObject([NumberObject(v) for v in rect]),
                         # NameObject("/Ff"):       NumberObject(0),
                         NameObject("/Ff"): NumberObject(4096) if ('comment' in name.lower()  or 
-                                         any(pattern in name for pattern in ['r1_name', 'r2_name', 'guide_name','title','5.c'])) else NumberObject(0),
+                                         any(pattern in name for pattern in ['r1_name', 'r2_name', 'guide_name','title','2.c'])) else NumberObject(0),
                          
                         NameObject("/DA"): TextStringObject(
-                        "0 0 0 rg /TiRo 13 Tf" if ('comment' in name.lower() or name == '5.c') 
+                        "0 0 0 rg /TiRo 13 Tf" if ('comment' in name.lower() or name == '2.c') 
                         else "0 0 0 rg /TiRo 13 Tf"
                         ),
 
                         # Center alignment for marks fields
-                        NameObject("/Q"):        NumberObject(1) if any(pattern in name for pattern in ['5.1', '5.2', '5.3', '5.4','5.5','5.6','5.7','5.8']) else NumberObject(0),
+                        NameObject("/Q"):        NumberObject(1) if any(pattern in name for pattern in ['2.1', '2.2', '2.3', '2.4','2.5','2.6','2.7','2.8']) else NumberObject(0),
                         # Invisible border
                         NameObject("/BS"):       DictionaryObject({
                             NameObject("/W"): NumberObject(0),

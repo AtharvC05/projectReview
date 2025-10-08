@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
 </head>
 <body>
+    <script src="{{ url_for('static', filename='js/review-common.js') }}"></script>
     <!-- Fixed Header with Centered Title and Right-Aligned Button -->
       <a href="/auth/logout" class="logout-btn">Logout</a>
     <div class="page-header">
@@ -1075,105 +1076,10 @@ function nextReview() {
 }
 </script>
 
-<!-- HEADER SCROLL FUNCTIONALITY -->
+<!-- INIT COMMON HEADER/MENU -->
 <script>
-// Header hide/show on scroll functionality
-let lastScrollTop = 0;
-let scrollThreshold = 5; // Minimum scroll distance to trigger hide/show
-let isHeaderVisible = true;
-
-function handleScroll() {
-    const header = document.querySelector('.page-header');
-    if (!header) return;
-    
-    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    // Check if we've scrolled enough to warrant a change
-    if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
-        return;
-    }
-    
-    // Scrolling down - hide header
-    if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
-        header.classList.add('hidden');
-        isHeaderVisible = false;
-    }
-    // Scrolling up - show header
-    else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
-        header.classList.remove('hidden');
-        isHeaderVisible = true;
-    }
-    
-    // Add scrolled class for backdrop effect when scrolled past header height
-    if (currentScrollTop > 80) {
-        header.classList.add('scrolled');
-    } else {
-        header.classList.remove('scrolled');
-    }
-    
-    lastScrollTop = currentScrollTop;
-}
-
-// Throttle scroll events for better performance
-let scrollTimer = null;
-function throttledScroll() {
-    if (scrollTimer) return;
-    
-    scrollTimer = setTimeout(() => {
-        handleScroll();
-        scrollTimer = null;
-    }, 10);
-}
-</script>
-
-<!-- MENU FUNCTIONALITY -->
-<script>
-let menuOpen = false;
-
-function toggleMenu() {
-    const menuToggle = document.querySelector('.menu-toggle');
-    const menuDropdown = document.getElementById('menuDropdown');
-    
-    menuOpen = !menuOpen;
-    
-    if (menuOpen) {
-        menuToggle.classList.add('active');
-        menuDropdown.classList.add('show');
-    } else {
-        menuToggle.classList.remove('active');
-        menuDropdown.classList.remove('show');
-    }
-}
-
-// Close menu when clicking outside
-document.addEventListener('click', function(event) {
-    const menuContainer = document.querySelector('.menu-container');
-    
-    if (!menuContainer.contains(event.target) && menuOpen) {
-        toggleMenu();
-    }
-});
-
-// Close menu when pressing Escape key
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape' && menuOpen) {
-        toggleMenu();
-    }
-});
-
-// Highlight current page and initialize scroll listener
 document.addEventListener('DOMContentLoaded', function() {
-    const currentPath = window.location.pathname;
-    const menuItems = document.querySelectorAll('.menu-item');
-    
-    menuItems.forEach(item => {
-        if (item.getAttribute('href') === currentPath) {
-            item.classList.add('current');
-        }
-    });
-    
-    // Add scroll listener for header hide/show
-    window.addEventListener('scroll', throttledScroll, { passive: true });
+    if (window.initPageCommon) window.initPageCommon();
 });
 </script>
 

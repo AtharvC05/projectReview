@@ -3,26 +3,17 @@ import os
 import mysql.connector
 import logging
 from datetime import datetime
+from backend.db import connect_db
 
 logger = logging.getLogger(__name__)
 
-def connect_db():
-    """Database connection with error handling."""
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root", 
-            password="1234",
-            database="project_review1",
-            autocommit=True,
-        )
-    except mysql.connector.Error as e:
-        logger.error(f"Database connection error: {e}")
-        raise
+def _db():
+    """Shared DB connection for this sheet (default via env)."""
+    return connect_db()
 
 def fetch_project_details(group_id):
     """Fetch project and members info from DB; raise error if not found."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -45,6 +36,21 @@ def fetch_project_details(group_id):
         if not members:
             raise ValueError(f"No members found for group_id: {group_id}")
         
+        # Format contact details to remove .0
+        formatted_members = []
+        for member in members:
+            roll_no, student_name, contact = member
+            # Remove .0 from contact if it's a number
+            if isinstance(contact, (int, float)):
+                contact = str(int(contact))
+            elif contact:
+                contact = str(contact).replace('.0', '')
+            else:
+                contact = ""
+            formatted_members.append((roll_no, student_name, contact))
+        
+        members = formatted_members
+        
     except mysql.connector.Error as e:
         logger.error(f"Database error: {e}")
         raise
@@ -52,15 +58,22 @@ def fetch_project_details(group_id):
         cursor.close()
         conn.close()
 
+    # Format mentor mobile if it exists
+    mentor_mobile = project.get("mentor_mobile", "")
+    if isinstance(mentor_mobile, (int, float)):
+        mentor_mobile = str(int(mentor_mobile))
+    elif mentor_mobile:
+        mentor_mobile = str(mentor_mobile).replace('.0', '')
+
     return {
         "group_id": project.get("group_id", group_id),
         "project_title": project.get("project_title", ""),
         "guide_name": project.get("guide_name", ""),
         "mentor_name": project.get("mentor_name", ""),
         "mentor_email": project.get("mentor_email", ""),
-        "mentor_mobile": project.get("mentor_mobile", ""),
-        "r1_name": project.get("evaluator1_name", ""),  # Reviewer 1
-        "r2_name": project.get("evaluator2_name", ""), # Reviewer 2
+        "mentor_mobile": mentor_mobile,
+        "r1_name": project.get("evaluator1_name", ""),
+        "r2_name": project.get("evaluator2_name", ""), 
         "members": members,
     }
 
@@ -87,19 +100,35 @@ def process_fields(doc, data):
     
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
-        widgets = list(page.widgets())
         
-        for widget in widgets:
-            field_name = getattr(widget, "field_name", None)
+        # Try both methods for compatibility with different PyMuPDF versions
+        try:
+            wgets = list(page.widgets())  # Newer versions (1.18+)
+        except AttributeError:
+            try:
+                # Fallback for older versions
+                wgets = []
+                for annot in page.annots():
+                    if annot.type[0] == fitz.PDF_ANNOT_WIDGET:
+                        wgets.append(annot)
+            except Exception as e:
+                logger.warning(f"Could not access form fields on page {page_num}: {e}")
+                continue
+        
+        if not wgets:
+            logger.warning(f"No form fields found on page {page_num}")
+            continue
+        
+        for wget in wgets:
+            field_name = getattr(wget, "field_name", None)
             if not field_name:
                 continue
 
             # Make transparent
             try:
-                widget.border_width = 0
-                widget.fill_color = None
-                widget.border_color = None
-                widget.border_style = "none"
+                wget.border_width = 0
+                wget.fill_color = None
+                wget.border_color = None
             except:
                 pass
             
@@ -107,45 +136,41 @@ def process_fields(doc, data):
             val = "" if val is None else str(val)
 
             if val.strip():
-                field_type = getattr(widget, 'field_type', 0)
+                field_type = getattr(wget, 'field_type', 0)
                 
-                if field_type == 2:  # Text field
-                    widget.field_value = val.strip()
+                if field_type == fitz.PDF_WIDGET_TYPE_TEXT:  # Text field
+                    wget.field_value = val.strip()
                     filled_count += 1
                     
-                elif field_type == 3:  # Button field
+                elif field_type in (fitz.PDF_WIDGET_TYPE_CHECKBOX, fitz.PDF_WIDGET_TYPE_RADIOBUTTON):
                     try:
-                        widget.button_value = val.strip()
-                        widget.set_checked(val.strip())
-                        filled_count += 1
-                    except:
                         val_upper = val.strip().upper()
                         if val_upper in ("Y", "YES", "TRUE", "1"):
-                            try:
-                                widget.check(True)
-                            except:
-                                widget.field_value = "Y"
+                            wget.field_value = True
                         elif val_upper in ("N", "NO", "FALSE", "0"):
-                            try:
-                                widget.check(False)
-                            except:
-                                widget.field_value = "N"
+                            wget.field_value = False
                         else:
-                            widget.field_value = val.strip()
+                            wget.field_value = val.strip()
+                        filled_count += 1
+                    except:
+                        wget.field_value = val.strip()
                         filled_count += 1
                 else:
                     # Unknown field type - try as text
-                    widget.field_value = val.strip()
-                    filled_count += 1
+                    try:
+                        wget.field_value = val.strip()
+                        filled_count += 1
+                    except:
+                        pass
 
             # Make read-only
             try:
-                widget.field_flags |= 1
+                wget.field_flags |= fitz.PDF_FIELD_IS_READ_ONLY
             except:
                 pass
                 
             try:
-                widget.update()
+                wget.update()
             except:
                 pass
 
@@ -174,10 +199,8 @@ def build_performance_evaluation_fields(form_data, num_members, template_type):
             
             # Map to appropriate field name based on template type
             if template_type == "4_member":
-                # For 4-member template, field names might be like: perf_1_1, perf_1_2, etc.
                 field_name = f"{criteria_key}_{member_num}"
             else:  # 5_member template
-                # For 5-member template, field names might be similar but support 5 columns
                 field_name = f"{criteria_key}_{member_num}"
             
             if form_key in form_data:
@@ -249,48 +272,45 @@ def generate_2_pdf(form_data, base_template_dir="pdf_template"):
     # Add student information (adaptive to number of members)
     max_members = 5 if template_type == "5_member" else 4
     
-    for idx, member in enumerate(members, start=1):
-        if idx > max_members:
-            logger.warning(f"Member {idx} skipped - template supports max {max_members} members")
+    for x, member in enumerate(members, start=1):
+        if x > max_members:
+            logger.warning(f"Member {x} skipped - template supports max {max_members} members")
             break
         
         if isinstance(member, (list, tuple)) and len(member) >= 3:
-            field_values[f"roll_{idx}"] = str(member[0] or "")
-            field_values[f"student_{idx}"] = str(member[1] or "")
-            field_values[f"contact_{idx}"] = str(member[2] or "")
+            field_values[f"roll_{x}"] = str(member[0] or "")
+            field_values[f"student_{x}"] = str(member[1] or "")
+            field_values[f"contact_{x}"] = str(member[2] or "")
 
-    # Map form responses for Review II questions (same for both templates)
+    # Map form responses for Review II questions
     que_to_pdf_field_map = {
-        # Section 2.1 questions (ID fields for checkboxes/radio buttons)
+        # Section 2.1 questions ( fields for checkboxes/radio buttons)
         'que_2.1.1': '2.1.1id', 'que_2.1.2': '2.1.2id', 'que_2.1.3': '2.1.3id',
         'que_2.1.4': '2.1.4id', 'que_2.1.5': '2.1.5id', 'que_2.1.6': '2.1.6id',
         'que_2.1.7': '2.1.7id', 'que_2.1.8': '2.1.8id', 'que_2.1.9': '2.1.9id',
-        'que_2.1.10': '2.1.10id', 'que_2.1.11': '2.1.11id', 'que_2.1.12': '2.1.12id',
+        'que_2.1.10': '2.1.10id', 'que_2.1.11': '2.1.11id', 'que_2.1.12': 'q2.1.12id',
         'que_2.1.13': '2.1.13id', 'que_2.1.14': '2.1.14id', 'que_2.1.15': '2.1.15id',
         'que_2.1.16': '2.1.16id',
         
         # Summary fields
-        'sum_2.1': '2.1.s1', 'sum_2.2': '2.2.s1', 'sum_2.3': '2.3.s1', 'sum_2.4': '2.4.s1',
+        'sum_2.1': 'que_2.1.s1', 'sum_2.2': '2.2.s1', 'sum_2.3': '2.3.s1', 'sum_2.4': '2.4.s1',
         
         # Comments
         'c2': '2.c',
         'comments': '2.c',  # Alternative key for comments
     }
-    
     # Add performance evaluation fields
     performance_fields = build_performance_evaluation_fields(form_data, num_members, template_type)
     field_values.update(performance_fields)
     
     # Map general form responses
     for key, val in form_data.items():
-        # Skip date field to prevent overwriting formatted date
         if key == "date":
             continue
             
         val_str = str(val or "")
         pdf_key = que_to_pdf_field_map.get(key, key)
         
-        # Don't overwrite performance fields that were already set
         if pdf_key not in field_values or not field_values[pdf_key]:
             field_values[pdf_key] = val_str
 
@@ -365,6 +385,12 @@ def fetch_attendance_data(group_id):
         attendance_data = {}
         
         for roll_no, student_name, is_present in results:
+            # Format roll_no to remove .0 if it's numeric
+            if isinstance(roll_no, (int, float)):
+                roll_no = str(int(roll_no))
+            else:
+                roll_no = str(roll_no).replace('.0', '')
+            
             attendance_data[f"attendance_{roll_no}"] = "1" if is_present else "0"
             
         return attendance_data
@@ -379,83 +405,26 @@ def fetch_attendance_data(group_id):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
-    # Test with 4-member group - use existing PDF field naming convention
     sample_data_4_members = {
-        "group_id": "BIA-01",  # Must exist in database with 4 members
+        "group_id": "BIA-01",
         "date": "2025-08-06",
-        
-        # Section 2.1 - Design questions (Yes/No/NA) - use existing field names
         "que_2.1.1": "Y", "que_2.1.2": "N", "que_2.1.3": "Y",
         "que_2.1.4": "Y", "que_2.1.5": "N", "que_2.1.6": "Y",
         "que_2.1.7": "Y", "que_2.1.8": "N", "que_2.1.9": "Y",
         "que_2.1.10": "Y", "que_2.1.11": "N", "que_2.1.12": "Y",
         "que_2.1.13": "Y", "que_2.1.14": "N", "que_2.1.15": "Y",
         "que_2.1.16": "Y",
-        
-        # Performance evaluation - use the original field structure from your code
         "que_2.2.1": "8", "que_2.2.2": "7", "que_2.2.3": "9",
         "que_2.2.4": "8", "que_2.2.5": "7", "que_2.2.6": "8",
         "que_2.2.7": "9", "que_2.2.8": "8",
-        
-        "que_2.3.1": "7", "que_2.3.2": "8", "que_2.3.3": "9",
-        "que_2.3.4": "8", "que_2.3.5": "7", "que_2.3.6": "8",
-        "que_2.3.7": "9", "que_2.3.8": "7",
-        
-        "que_2.4.1": "8", "que_2.4.2": "9", "que_2.4.3": "7",
-        "que_2.4.4": "8", "que_2.4.5": "8", "que_2.4.6": "9",
-        "que_2.4.7": "7", "que_2.4.8": "8",
-        
-        # Summary scores
         "sum_2.1": "15", "sum_2.2": "64", "sum_2.3": "63", "sum_2.4": "64",
-        
-        # Comments
-        "comments": "Excellent progress in Review II. Good implementation and documentation."
-    }
-    
-    # Test with 5-member group - same field structure, just more data
-    sample_data_5_members = {
-        "group_id": "BIA-02",  # Must exist in database with 5 members
-        "date": "2025-08-06",
-        
-        # Section 2.1 - Design questions (same as 4-member)
-        "que_2.1.1": "Y", "que_2.1.2": "N", "que_2.1.3": "Y",
-        "que_2.1.4": "Y", "que_2.1.5": "N", "que_2.1.6": "Y",
-        "que_2.1.7": "Y", "que_2.1.8": "N", "que_2.1.9": "Y",
-        "que_2.1.10": "Y", "que_2.1.11": "N", "que_2.1.12": "Y",
-        "que_2.1.13": "Y", "que_2.1.14": "N", "que_2.1.15": "Y",
-        "que_2.1.16": "Y",
-        
-        # Performance evaluation - same field names, different values
-        "que_2.2.1": "8", "que_2.2.2": "7", "que_2.2.3": "9",
-        "que_2.2.4": "8", "que_2.2.5": "7", "que_2.2.6": "8",
-        "que_2.2.7": "9", "que_2.2.8": "8",
-        
-        "que_2.3.1": "7", "que_2.3.2": "8", "que_2.3.3": "9",
-        "que_2.3.4": "8", "que_2.3.5": "7", "que_2.3.6": "8",
-        "que_2.3.7": "9", "que_2.3.8": "7",
-        
-        "que_2.4.1": "8", "que_2.4.2": "9", "que_2.4.3": "7",
-        "que_2.4.4": "8", "que_2.4.5": "8", "que_2.4.6": "9",
-        "que_2.4.7": "7", "que_2.4.8": "8",
-        
-        # Summary scores
-        "sum_2.1": "15", "sum_2.2": "64", "sum_2.3": "63", "sum_2.4": "64",
-        
-        # Comments
-        "comments": "Excellent progress in Review II. All 5 members performed well."
+        "comments": "Excellent progress in Review II."
     }
 
     try:
-        # Test 4-member group
-        print("Testing 4-member group...")
+        print("Testing PDF generation...")
         pdf_path = generate_2_pdf(sample_data_4_members)
-        print(f"4-member PDF generated: {pdf_path}")
-        
-        # Test 5-member group
-        print("\nTesting 5-member group...")
-        pdf_path = generate_2_pdf(sample_data_5_members)
-        print(f"5-member PDF generated: {pdf_path}")
-        
+        print(f"PDF generated: {pdf_path}")
     except Exception as e:
         print(f"Error: {e}")
         import traceback

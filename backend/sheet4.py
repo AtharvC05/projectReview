@@ -3,26 +3,17 @@ import mysql.connector
 import os
 import logging
 from datetime import datetime
+from backend.db import connect_db
 
 logger = logging.getLogger(__name__)
 
-def connect_db():
-    """Connect to the MySQL database."""
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="1234",
-            database="project_review1",
-            autocommit=True,
-        )
-    except mysql.connector.Error as err:
-        logger.error(f"Database connection error: {err}")
-        raise Exception(f"Database connection error: {err}")
+def _db():
+    """Shared DB connection for this sheet (default via env)."""
+    return connect_db()
 
 def fetch_project_details(group_id):
     """Fetch project and members' details from the database by group_id."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -134,7 +125,7 @@ def process_fields(doc, data):
 
 def fetch_attendance_data(group_id):
     """Fetch attendance data for a group for Review IV."""
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
     
     try:
@@ -165,7 +156,7 @@ def save_attendance_data(group_id, attendance_dict):
     if not group_id or not attendance_dict:
         return
         
-    conn = connect_db()
+    conn = _db()
     cursor = conn.cursor()
 
     try:

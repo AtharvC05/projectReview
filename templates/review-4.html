@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
 </head>
 <body>
+ <script src="{{ url_for('static', filename='js/review-common.js') }}"></script>
      <a href="/auth/logout" class="logout-btn">Logout</a>
     <div class="page-header">
     <div class="header-left"></div>
@@ -224,494 +225,474 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (target) {
                 target.focus();
-                e.preventDefault(); // stop cursor moving inside input
+                e.preventDefault();
             }
         });
     });
 });
 </script>
 
-    <script>
-        // Initialize form on load
-        document.addEventListener('DOMContentLoaded', function() {
-            setupEventListeners();
-            calculateTotals(); // Initial calculation
+<script>
+    // Initialize form on load
+    document.addEventListener('DOMContentLoaded', function() {
+        setupEventListeners();
+        calculateTotals();
+    });
+
+    // Set up all event listeners
+    function setupEventListeners() {
+        // Marks calculation
+        document.querySelectorAll('.marks').forEach(input => {
+            input.addEventListener('input', handleMarkInput);
         });
-    
-        // Set up all event listeners
-        function setupEventListeners() {
-            // Marks calculation
-            document.querySelectorAll('.marks').forEach(input => {
-                input.addEventListener('input', handleMarkInput);
+
+        // Group ID auto-fill
+        const groupIdInput = document.getElementById('group_id');
+        if (groupIdInput) {
+            groupIdInput.addEventListener('change', fetchGroupDetails);
+        }
+    }
+
+    // Handle mark input with validation
+    function handleMarkInput(e) {
+        const input = e.target;
+        const max = parseFloat(input.getAttribute('max')) || Infinity;
+        const value = parseFloat(input.value) || 0;
+        
+        if (value > max) {
+            input.value = max;
+        }
+        
+        calculateTotals();
+    }
+
+    // Calculate totals for all members
+    function calculateTotals() {
+        for (let i = 1; i <= currentMemberCount; i++) {
+            let total = 0;
+            let valid = true;
+            
+            document.querySelectorAll(`.marks[data-member="${i}"]`).forEach(input => {
+                const value = parseFloat(input.value);
+                if (!isNaN(value)) {
+                    total += value;
+                } else if (input.value !== '') {
+                    valid = false;
+                    input.classList.add('error');
+                }
             });
-    
-            // Group ID auto-fill
-            const groupIdInput = document.getElementById('group_id');
-            if (groupIdInput) {
-                groupIdInput.addEventListener('change', fetchGroupDetails);
+            
+            const totalField = document.querySelector(`.total[name="f4.${i}.s1"]`);
+            if (totalField) {
+                totalField.value = valid && total > 0 ? total : '';
+                totalField.classList.toggle('error', !valid || total > 25);
             }
         }
-    
-        // Handle mark input with validation
-        function handleMarkInput(e) {
-            const input = e.target;
-            const max = parseFloat(input.getAttribute('max')) || Infinity;
-            const value = parseFloat(input.value) || 0;
-            
-            // Validate input
-            if (value > max) {
-                input.value = max;
+    }
+
+    // Submit form to generate PDF
+    async function submitForm() {
+        if (!validateForm()) return;
+
+        const form = document.getElementById('form-data');
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        try {
+            const submitBtn = document.querySelector('button[onclick="submitForm()"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Generating PDF...';
+
+            const response = await fetch('/generate-pdf-review4', {
+                method: 'POST',
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
             }
-            
-            calculateTotals();
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Review-IV_Form.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert(`Failed to generate PDF: ${error.message}`);
+        } finally {
+            const submitBtn = document.querySelector('button[onclick="submitForm()"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Generate PDF';
+            }
         }
-    
-        // Calculate totals for all members
-        function calculateTotals() {
-            for (let i = 1; i <= 4; i++) {
-                let total = 0;
-                let valid = true;
+    }
+
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        
+        const requiredFields = ['group_id', 'date'];
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && !element.value.trim()) {
+                element.classList.add('error');
+                isValid = false;
+            } else if (element) {
+                element.classList.remove('error');
+            }
+        });
+
+        if (!isValid) {
+            alert('Please fill all required fields and ensure all marks are valid numbers');
+        }
+
+        return isValid;
+    }
+
+    // Fetch group details from backend
+    async function fetchGroupDetails() {
+        const groupId = document.getElementById('group_id').value.trim();
+        if (!groupId) return;
+
+        try {
+            const response = await fetch(`/fetch/${groupId}`);
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const data = await response.json();
+            populateForm(data);
+
+        } catch (error) {
+            console.error('Error fetching group details:', error);
+        }
+    }
+
+    // Populate form with fetched data
+    function populateForm(data) {
+        const fields = {
+            'project_title': data.project_title,
+            'guide_name': data.guide_name,
+            'mentor_name': data.mentor_name,
+            'mentor_email': data.mentor_email,
+            'mentor_mobile': data.mentor_mobile
+        };
+
+        Object.entries(fields).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.value = value || '';
+        });
+
+        if (data.members && Array.isArray(data.members)) {
+            data.members.forEach((member, index) => {
+                const fields = [
+                    `roll_no_${index + 1}`,
+                    `student_name_${index + 1}`,
+                    `contact_details_${index + 1}`
+                ];
                 
-                document.querySelectorAll(`.marks[data-member="${i}"]`).forEach(input => {
-                    const value = parseFloat(input.value);
-                    if (!isNaN(value)) {
-                        total += value;
-                    } else {
-                        valid = false;
-                        input.classList.add('error');
+                fields.forEach(field => {
+                    const element = document.getElementById(field);
+                    if (element) {
+                        element.value = member[field.split('_')[0]] || '';
                     }
                 });
-                
-                const totalField = document.querySelector(`.total[name="f4.${i}.s1"]`);
-                if (totalField) {
-                    totalField.value = valid ? total : 'Invalid';
-                    totalField.classList.toggle('error', !valid);
-                }
-            }
-        }
-    
-        // Submit form to generate PDF
-        async function submitForm() {
-            // Validate form first
-            if (!validateForm()) return;
-    
-            const form = document.getElementById('form-data');
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
-    
-            try {
-                // Show loading state
-                const submitBtn = document.querySelector('button[onclick="submitForm()"]');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Generating PDF...';
-    
-                const response = await fetch('/generate-pdf-review4', {  // Updated endpoint
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-    
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
-    
-                // Handle PDF download
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = 'Review-IV_Form.pdf';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-    
-            } catch (error) {
-                console.error('PDF generation failed:', error);
-                alert(`Failed to generate PDF: ${error.message}`);
-            } finally {
-                // Reset button state
-                const submitBtn = document.querySelector('button[onclick="submitForm()"]');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Generate PDF';
-                }
-            }
-        }
-    
-        // Form validation
-        function validateForm() {
-            let isValid = true;
-            
-            // Validate required fields
-            const requiredFields = ['group_id', 'date'];
-            requiredFields.forEach(field => {
-                const element = document.getElementById(field);
-                if (element && !element.value.trim()) {
-                    element.classList.add('error');
-                    isValid = false;
-                } else if (element) {
-                    element.classList.remove('error');
-                }
             });
-    
-            if (!isValid) {
-                alert('Please fill all required fields and ensure all marks are valid numbers');
-            }
-    
-            return isValid;
         }
+    }
+
     
-        // Fetch group details from backend
-        async function fetchGroupDetails() {
-            const groupId = document.getElementById('group_id').value.trim();
-            if (!groupId) return;
+    // Navigation functions
+    function nextReview() {
+        saveFormData();
+        window.location.href = '/review5';
+    }
+
+    function previousReview() {
+        saveFormData();
+        window.location.href = '/review3';
+    }
+
+    function saveFormData() {
+        const formData = new FormData(document.getElementById('form-data'));
+        const data = Object.fromEntries(formData.entries());
+        sessionStorage.setItem('review4_data', JSON.stringify(data));
+    }
     
-            try {
-                const response = await fetch(`/fetch/${groupId}`);
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
-    
-                const data = await response.json();
-                populateForm(data);
-    
-            } catch (error) {
-            }
+    // Header hide/show on scroll functionality
+    let lastScrollTop = 0;
+    let scrollThreshold = 5;
+    let isHeaderVisible = true;
+
+    function handleScroll() {
+        const header = document.querySelector('.page-header');
+        const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
+            return;
         }
-    
-        // Populate form with fetched data
-        function populateForm(data) {
-            const fields = {
-                'project_title': data.project_title,
-                'guide_name': data.guide_name,
-                'mentor_name': data.mentor_name,
-                'mentor_email': data.mentor_email,
-                'mentor_mobile': data.mentor_mobile
-            };
-    
-            Object.entries(fields).forEach(([id, value]) => {
-                const element = document.getElementById(id);
-                if (element) element.value = value || '';
-            });
-    
-            // Populate member details
-            if (data.members && Array.isArray(data.members)) {
-                data.members.forEach((member, index) => {
-                    const fields = [
-                        `roll_no_${index + 1}`,
-                        `student_name_${index + 1}`,
-                        `contact_details_${index + 1}`
-                    ];
-                    
-                    fields.forEach(field => {
-                        const element = document.getElementById(field);
-                        if (element) {
-                            element.value = member[field.split('_')[0]] || '';
-                        }
-                    });
-                });
-            }
+
+        if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
+            header.classList.add('hidden');
+            isHeaderVisible = false;
         }
-    
+        else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
+            header.classList.remove('hidden');
+            isHeaderVisible = true;
+        }
+
+        if (currentScrollTop > 80) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+
+        lastScrollTop = currentScrollTop;
+    }
+
+    let scrollTimer = null;
+    function throttledScroll() {
+        if (scrollTimer) return;
+        scrollTimer = setTimeout(() => {
+            handleScroll();
+            scrollTimer = null;
+        }, 10);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('scroll', throttledScroll, { passive: true });
+    });
+
+</script>
+
+<script>
+    let menuOpen = false;
+
+    function toggleMenu() {
+        const menuToggle = document.querySelector('.menu-toggle');
+        const menuDropdown = document.getElementById('menuDropdown');
         
-         // Navigation functions
-         function nextReview() {
-                saveFormData();
-                window.location.href = '/review5';
-            }
+        menuOpen = !menuOpen;
         
-            function previousReview() {
-                saveFormData();
-                window.location.href = '/review3';
-            }
-    
-        function saveFormData() {
-            const formData = new FormData(document.getElementById('form-data'));
-            const data = Object.fromEntries(formData.entries());
-            sessionStorage.setItem('review4_data', JSON.stringify(data));
+        if (menuOpen) {
+            menuToggle.classList.add('active');
+            menuDropdown.classList.add('show');
+        } else {
+            menuToggle.classList.remove('active');
+            menuDropdown.classList.remove('show');
         }
-        // Header hide/show on scroll functionality
-let lastScrollTop = 0;
-let scrollThreshold = 5;
-let isHeaderVisible = true;
-
-function handleScroll() {
-    const header = document.querySelector('.page-header');
-    const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-
-    if (Math.abs(currentScrollTop - lastScrollTop) < scrollThreshold) {
-        return;
     }
 
-    // Hide header when scrolling down
-    if (currentScrollTop > lastScrollTop && currentScrollTop > 100 && isHeaderVisible) {
-        header.classList.add('hidden');
-        isHeaderVisible = false;
-    }
-    // Show header when scrolling up
-    else if (currentScrollTop < lastScrollTop && !isHeaderVisible) {
-        header.classList.remove('hidden');
-        isHeaderVisible = true;
-    }
-
-    // Optional: Add scrolled class for visual feedback
-    if (currentScrollTop > 80) {
-        header.classList.add('scrolled');
-    } else {
-        header.classList.remove('scrolled');
-    }
-
-    lastScrollTop = currentScrollTop;
-}
-
-// Throttling for better performance
-let scrollTimer = null;
-function throttledScroll() {
-    if (scrollTimer) return;
-    scrollTimer = setTimeout(() => {
-        handleScroll();
-        scrollTimer = null;
-    }, 10);
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Your existing DOMContentLoaded code...
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-});
-
-    </script>
-     <script>
-        let menuOpen = false;
-
-        function toggleMenu() {
-            const menuToggle = document.querySelector('.menu-toggle');
-            const menuDropdown = document.getElementById('menuDropdown');
-            
-            menuOpen = !menuOpen;
-            
-            if (menuOpen) {
-                menuToggle.classList.add('active');
-                menuDropdown.classList.add('show');
-            } else {
-                menuToggle.classList.remove('active');
-                menuDropdown.classList.remove('show');
-            }
+    document.addEventListener('click', function(event) {
+        const menuContainer = document.querySelector('.menu-container');
+        
+        if (!menuContainer.contains(event.target) && menuOpen) {
+            toggleMenu();
         }
+    });
 
-        // Close menu when clicking outside
-        document.addEventListener('click', function(event) {
-            const menuContainer = document.querySelector('.menu-container');
-            
-            if (!menuContainer.contains(event.target) && menuOpen) {
-                toggleMenu();
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && menuOpen) {
+            toggleMenu();
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const menuItems = document.querySelectorAll('.menu-item');
+        
+        menuItems.forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.classList.add('current');
             }
         });
+    });
+</script>
 
-        // Close menu when pressing Escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && menuOpen) {
-                toggleMenu();
-            }
-        });
-
-        // Highlight current page
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const menuItems = document.querySelectorAll('.menu-item');
-            
-            menuItems.forEach(item => {
-                if (item.getAttribute('href') === currentPath) {
-                    item.classList.add('current');
-                }
-            });
-        });
-    </script>
-    
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("form-data");
-  const groupIdInput = document.getElementById("group_id");
+    const form = document.getElementById("form-data");
+    const groupIdInput = document.getElementById("group_id");
 
-  if (!form || !groupIdInput) {
-    console.error("❌ Required elements (form-data or group_id) not found");
-    return;
-  }
-
-  console.log("✅ Sheet 4 script initialized");
-
-  // ========== FORM CLEARING FUNCTION ==========
-  function clearFormFields() {
-    console.log("🧹 Clearing all form fields");
-    
-    // Clear all input types
-    form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
-      input.checked = false;
-    });
-    
-    form.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], textarea, select').forEach(input => {
-      if (input.id !== 'group_id') { // Don't clear the group_id field itself
-        input.value = '';
-      }
-    });
-
-    // Trigger total calculations if available to reset calculated values
-    if (typeof calculateTotals === "function") {
-      calculateTotals();
-    }
-  }
-
-  // ========== AUTO FETCH ==========
-  groupIdInput.addEventListener("blur", async () => {
-    const groupId = groupIdInput.value.trim();
-    if (!groupId) return;
-
-    console.log(`🔍 Fetching data for group: ${groupId}`);
-    
-    // Clear form first to prevent old data from persisting
-    clearFormFields();
-
-    try {
-      const res = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
-      if (!res.ok) {
-        console.error(`❌ Fetch failed: ${res.status}`);
+    if (!form || !groupIdInput) {
+        console.error("Required elements (form-data or group_id) not found");
         return;
-      }
-      const data = await res.json();
-      const responses = data.responses || {};
-      
-      console.log("📥 Fetched responses:", responses);
+    }
 
-      if (Object.keys(responses).length > 0) {
-        let fieldsFilled = 0;
-        for (const [name, val] of Object.entries(responses)) {
-          const els = form.querySelectorAll(`[name="${CSS.escape(name)}"]`);
-          if (els.length === 0) {
-            console.warn(`⚠️ Field not found: ${name}`);
-            continue;
-          }
-          els.forEach(el => {
-            if (el.type === "radio" || el.type === "checkbox") {
-              if (el.value === val) {
-                el.checked = true;
-                fieldsFilled++;
-              }
-            } else {
-              el.value = val;
-              fieldsFilled++;
-            }
-          });
-        }
-        console.log(`✅ Auto-filled ${fieldsFilled} fields`);
+    console.log("Sheet 4 script initialized");
+
+    // Clear form fields
+    function clearFormFields() {
+        console.log("Clearing all form fields");
         
-        // Trigger calculations if available
+        form.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(input => {
+            input.checked = false;
+        });
+        
+        form.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], textarea, select').forEach(input => {
+            if (input.id !== 'group_id') {
+                input.value = '';
+            }
+        });
+
         if (typeof calculateTotals === "function") {
-          calculateTotals();
+            calculateTotals();
         }
-      } else {
-        console.log("ℹ️ No existing data found for group:", groupId);
-      }
-    } catch (err) {
-      console.error("❌ Fetch error:", err);
     }
-  });
 
-  // ========== CLEAR FORM ON GROUP_ID CHANGE ==========
-  groupIdInput.addEventListener("input", function() {
-    // Cancel any pending save operations
-    clearTimeout(debounceTimeout);
+    // AUTO FETCH - loads saved data after table is built
+    groupIdInput.addEventListener("blur", async () => {
+        const groupId = groupIdInput.value.trim();
+        if (!groupId) return;
+
+        console.log(`Fetching data for group: ${groupId}`);
+        
+        clearFormFields();
+
+        try {
+            const res = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+            if (!res.ok) {
+                console.error(`Fetch failed: ${res.status}`);
+                return;
+            }
+            const data = await res.json();
+            const responses = data.responses || {};
+            
+            console.log("Fetched responses:", responses);
+
+            if (Object.keys(responses).length > 0) {
+                let fieldsFilled = 0;
+                for (const [name, val] of Object.entries(responses)) {
+                    const els = form.querySelectorAll(`[name="${CSS.escape(name)}"]`);
+                    if (els.length === 0) {
+                        console.warn(`Field not found: ${name}`);
+                        continue;
+                    }
+                    els.forEach(el => {
+                        if (el.type === "radio" || el.type === "checkbox") {
+                            if (el.value === val) {
+                                el.checked = true;
+                                fieldsFilled++;
+                            }
+                        } else {
+                            el.value = val;
+                            fieldsFilled++;
+                        }
+                    });
+                }
+                console.log(`Auto-filled ${fieldsFilled} fields`);
+                
+                if (typeof calculateTotals === "function") {
+                    calculateTotals();
+                }
+            } else {
+                console.log("No existing data found for group:", groupId);
+            }
+        } catch (err) {
+            console.error("Fetch error:", err);
+        }
+    });
+
+    // Clear form on group_id change
+    groupIdInput.addEventListener("input", function() {
+        clearTimeout(debounceTimeout);
+        
+        const currentGroupId = groupIdInput.value.trim();
+        if (currentGroupId) {
+            clearFormFields();
+        }
+    });
+
+    // AUTO SAVE
+    let debounceTimeout;
+    async function saveFormData() {
+        const groupId = groupIdInput.value.trim();
+        if (!groupId) {
+            console.log("No group ID provided, skipping save");
+            return;
+        }
+
+        const formData = new FormData(form);
+        const payload = { group_id: groupId };
+        let count = 0;
+
+        for (const [name, val] of formData.entries()) {
+            if (val.trim() !== "") {
+                payload[name] = val;
+                count++;
+            }
+        }
+
+        if (count === 0) {
+            console.log("No data to save");
+            return;
+        }
+
+        console.log(`Saving ${count} fields for group ${groupId}:`, payload);
+
+        try {
+            const res = await fetch("/api/save-response", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                console.error(`Save failed: ${res.status}`);
+                return;
+            }
+            const resJson = await res.json();
+            console.log(`Saved ${count} fields: ${resJson.message}`);
+        } catch (err) {
+            console.error("Save error:", err);
+        }
+    }
+
+    function debounceSave() {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(saveFormData, 1000);
+    }
+
+    form.addEventListener("input", function(event) {
+        if (event.target.id !== 'group_id') {
+            debounceSave();
+        }
+    });
     
-    // Clear form immediately when group_id changes
-    const currentGroupId = groupIdInput.value.trim();
-    if (currentGroupId) {
-      clearFormFields();
-    }
-  });
+    form.addEventListener("change", function(event) {
+        if (event.target.id !== 'group_id') {
+            debounceSave();
+        }
+    });
 
-  // ========== AUTO SAVE ==========
-  let debounceTimeout;
-  async function saveFormData() {
-    const groupId = groupIdInput.value.trim();
-    if (!groupId) {
-      console.log("ℹ️ No group ID provided, skipping save");
-      return;
-    }
-
-    const formData = new FormData(form);
-    const payload = { group_id: groupId };
-    let count = 0;
-
-    for (const [name, val] of formData.entries()) {
-      if (val.trim() !== "") {
-        payload[name] = val;
-        count++;
-      }
+    // Save before PDF generation
+    const pdfBtn = document.getElementById("generate-pdf");
+    if (pdfBtn) {
+        const origClick = pdfBtn.onclick;
+        pdfBtn.onclick = async function (event) {
+            const groupId = groupIdInput.value.trim();
+            if (groupId) {
+                await saveFormData();
+                console.log("Data saved before PDF generation");
+            }
+            if (origClick) return origClick.call(this, event);
+        };
     }
 
-    if (count === 0) {
-      console.log("ℹ️ No data to save");
-      return;
-    }
-
-    console.log(`💾 Saving ${count} fields for group ${groupId}:`, payload);
-
-    try {
-      const res = await fetch("/api/save-response", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        console.error(`❌ Save failed: ${res.status}`);
-        return;
-      }
-      const resJson = await res.json();
-      console.log(`✅ Saved ${count} fields: ${resJson.message}`);
-    } catch (err) {
-      console.error("❌ Save error:", err);
-    }
-  }
-
-  function debounceSave() {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(saveFormData, 1000);
-  }
-
-  // Listen for changes (but exclude group_id field)
-  form.addEventListener("input", function(event) {
-    // Don't trigger auto-save when group_id field changes
-    if (event.target.id !== 'group_id') {
-      debounceSave();
-    }
-  });
-  
-  form.addEventListener("change", function(event) {
-    // Don't trigger auto-save when group_id field changes
-    if (event.target.id !== 'group_id') {
-      debounceSave();
-    }
-  });
-
-  // Save before PDF generation
-  const pdfBtn = document.getElementById("generate-pdf");
-  if (pdfBtn) {
-    const origClick = pdfBtn.onclick;
-    pdfBtn.onclick = async function (event) {
-      const groupId = groupIdInput.value.trim();
-      if (groupId) {
-        await saveFormData();
-        console.log("💾 Data saved before PDF generation");
-      }
-      if (origClick) return origClick.call(this, event);
-    };
-  }
-
-  console.log("🚀 Sheet 4 save/load system ready");
+    console.log("Sheet 4 save/load system ready");
 });
 </script>
+
 <script>
 class Review4AttendanceManager {
     constructor() {
@@ -814,7 +795,6 @@ class Review4AttendanceManager {
         console.log(`Updating marks for member ${memberIndex}, present: ${isPresent}`);
         
         if (!isPresent) {
-            // Set all marks fields to '0'
             [1, 2, 3, 4, 5].forEach(fieldNum => {
                 const fieldName = `f4.${memberIndex}.${fieldNum}`;
                 const input = document.querySelector(`input[name="${fieldName}"]`);
@@ -823,14 +803,12 @@ class Review4AttendanceManager {
                     console.log(`Set ${fieldName} to 0`);
                 }
             });
-            // Set total field to '0'
             const totalField = document.querySelector(`input[name="f4.${memberIndex}.s1"]`);
             if (totalField) {
                 totalField.value = '0';
                 console.log(`Set f4.${memberIndex}.s1 to 0`);
             }
         } else {
-            // Clear all marks fields when present
             [1, 2, 3, 4, 5].forEach(fieldNum => {
                 const fieldName = `f4.${memberIndex}.${fieldNum}`;
                 const input = document.querySelector(`input[name="${fieldName}"]`);
@@ -839,7 +817,6 @@ class Review4AttendanceManager {
                     console.log(`Cleared ${fieldName}`);
                 }
             });
-            // Clear total field
             const totalField = document.querySelector(`input[name="f4.${memberIndex}.s1"]`);
             if (totalField) {
                 totalField.value = '';
@@ -877,7 +854,7 @@ let attendanceManager = new Review4AttendanceManager();
 </script>
 
 <script>
-// --- Dynamic Performance Table for Review 4 ---
+// Dynamic Performance Table for Review 4
 let currentMemberCount = 4;
 let isTableBuilding = false;
 
@@ -895,16 +872,63 @@ async function fetchMemberCount(groupId) {
     }
 }
 
+// Load saved responses into table
+async function loadSavedResponses(groupId) {
+    try {
+        console.log(`Loading saved responses for group: ${groupId}`);
+        const response = await fetch(`/api/fetch-response/${encodeURIComponent(groupId)}`);
+        if (!response.ok) {
+            console.error(`Failed to fetch responses for group ${groupId}`);
+            return;
+        }
+        const data = await response.json();
+        const responses = data.responses || {};
+        console.log("Loaded saved responses:", responses);
+
+        let filled = 0;
+        for (const [fieldName, fieldValue] of Object.entries(responses)) {
+            const elements = document.querySelectorAll(`[name="${CSS.escape(fieldName)}"]`);
+            elements.forEach(el => {
+                if (el.type === "radio" || el.type === "checkbox") {
+                    if (el.value === fieldValue) {
+                        el.checked = true;
+                        filled++;
+                    }
+                } else {
+                    el.value = fieldValue;
+                    filled++;
+                }
+            });
+        }
+        console.log(`Auto-filled ${filled} fields for group ${groupId}`);
+
+        if (typeof calculateTotals === "function") {
+            setTimeout(calculateTotals, 200);
+        }
+    } catch (err) {
+        console.error("Error loading responses:", err);
+    }
+}
+
 // Build dynamic performance table
 async function buildPerformanceTable(groupId, forceMemberCount = null) {
-    if (isTableBuilding) return;
+    if (isTableBuilding) {
+        console.log('Table is already being built, skipping...');
+        return;
+    }
+    
     isTableBuilding = true;
+    
     try {
         const memberCount = forceMemberCount || await fetchMemberCount(groupId);
         currentMemberCount = memberCount;
+        console.log(`Building Review IV table for group ${groupId} with ${memberCount} members`);
 
         const tableContainer = document.getElementById('performance-table-container');
-        if (!tableContainer) return;
+        if (!tableContainer) {
+            console.error('Performance table container not found');
+            return;
+        }
 
         // Table headings
         let thead = `<thead>
@@ -950,9 +974,11 @@ async function buildPerformanceTable(groupId, forceMemberCount = null) {
         tableContainer.innerHTML = `<table id="performance-table">${thead}${tbody}${tfoot}</table>`;
 
         // Attach listeners
-        attachTableEventListeners();
-        setupArrowNavigation();
-        calculateTotals();
+        setTimeout(() => {
+            attachTableEventListeners();
+            setupArrowNavigation();
+        }, 100);
+        
     } catch (error) {
         console.error('Error building table:', error);
     } finally {
@@ -976,82 +1002,94 @@ function validateInput(input) {
     const max = parseFloat(input.getAttribute('max')) || Infinity;
     const min = parseFloat(input.getAttribute('min')) || 0;
     const value = parseFloat(input.value);
+    
     if (input.value === '') {
         input.classList.remove('error');
         return true;
     }
+    
     if (isNaN(value) || value < min) {
         input.value = '';
         input.classList.add('error');
         return false;
     }
+    
     if (value > max) {
         input.value = max;
         input.classList.add('error');
         return false;
     }
+    
     input.classList.remove('error');
     return true;
-}
-
-// Calculate totals for all members
-function calculateTotals() {
-    for (let i = 1; i <= currentMemberCount; i++) {
-        let total = 0;
-        let valid = true;
-        document.querySelectorAll(`.marks[data-member="${i}"]`).forEach(input => {
-            const value = parseFloat(input.value);
-            if (!isNaN(value)) {
-                total += value;
-            } else {
-                valid = false;
-                input.classList.add('error');
-            }
-        });
-        const totalField = document.querySelector(`.total[name="f4.${i}.s1"]`);
-        if (totalField) {
-            totalField.value = valid ? total : 'Invalid';
-            totalField.classList.toggle('error', !valid);
-        }
-    }
 }
 
 // Arrow key navigation for table inputs
 function setupArrowNavigation() {
     const inputs = Array.from(document.querySelectorAll("#performance-table input[type='number']"));
     const matrix = [];
-    let maxCols = currentMemberCount;
-    let rows = 5; // 5 rows for marks
-
+    
     // Build matrix
-    for (let r = 0; r < rows; r++) {
-        matrix[r] = [];
-        for (let c = 0; c < maxCols; c++) {
-            matrix[r][c] = inputs[r * maxCols + c];
+    inputs.forEach(input => {
+        const tr = input.closest("tr");
+        const td = input.closest("td");
+        const tbody = tr.closest('tbody');
+        const tfoot = tr.closest('tfoot');
+        
+        let rowIndex;
+        if (tbody) {
+            rowIndex = Array.from(tbody.children).indexOf(tr);
+        } else if (tfoot) {
+            rowIndex = 5; // Footer row is after 5 body rows
         }
-    }
+        
+        const colIndex = Array.from(tr.children).indexOf(td) - 1;
+        
+        if (!matrix[rowIndex]) matrix[rowIndex] = [];
+        matrix[rowIndex][colIndex] = input;
+    });
 
     inputs.forEach(input => {
         input.addEventListener("keydown", function (e) {
             const tr = input.closest("tr");
             const td = input.closest("td");
-            const rowIndex = Array.from(tr.parentNode.children).indexOf(tr);
-            const colIndex = Array.from(tr.children).indexOf(td);
+            const tbody = tr.closest('tbody');
+            const tfoot = tr.closest('tfoot');
+            
+            let rowIndex;
+            if (tbody) {
+                rowIndex = Array.from(tbody.children).indexOf(tr);
+            } else if (tfoot) {
+                rowIndex = 5;
+            }
+            
+            const colIndex = Array.from(tr.children).indexOf(td) - 1;
+            
             let target = null;
+            
             switch (e.key) {
                 case "ArrowUp":
-                    if (matrix[rowIndex - 1] && matrix[rowIndex - 1][colIndex]) target = matrix[rowIndex - 1][colIndex];
+                    if (matrix[rowIndex - 1] && matrix[rowIndex - 1][colIndex]) {
+                        target = matrix[rowIndex - 1][colIndex];
+                    }
                     break;
                 case "ArrowDown":
-                    if (matrix[rowIndex + 1] && matrix[rowIndex + 1][colIndex]) target = matrix[rowIndex + 1][colIndex];
+                    if (matrix[rowIndex + 1] && matrix[rowIndex + 1][colIndex]) {
+                        target = matrix[rowIndex + 1][colIndex];
+                    }
                     break;
                 case "ArrowLeft":
-                    if (matrix[rowIndex][colIndex - 1]) target = matrix[rowIndex][colIndex - 1];
+                    if (matrix[rowIndex][colIndex - 1]) {
+                        target = matrix[rowIndex][colIndex - 1];
+                    }
                     break;
                 case "ArrowRight":
-                    if (matrix[rowIndex][colIndex + 1]) target = matrix[rowIndex][colIndex + 1];
+                    if (matrix[rowIndex][colIndex + 1]) {
+                        target = matrix[rowIndex][colIndex + 1];
+                    }
                     break;
             }
+            
             if (target) {
                 target.focus();
                 e.preventDefault();
@@ -1060,19 +1098,40 @@ function setupArrowNavigation() {
     });
 }
 
-// --- Hook table build to group ID changes ---
-document.addEventListener('DOMContentLoaded', function() {
+// Hook table build to group ID changes
+document.addEventListener('DOMContentLoaded', async function() {
     const groupIdInput = document.getElementById("group_id");
     if (groupIdInput) {
+        // Build table and load data on blur
         groupIdInput.addEventListener("blur", async () => {
-            await buildPerformanceTable(groupIdInput.value.trim());
+            const groupId = groupIdInput.value.trim();
+            if (groupId) {
+                await buildPerformanceTable(groupId);
+                await loadSavedResponses(groupId);
+            }
         });
-        groupIdInput.addEventListener("input", async () => {
-            await buildPerformanceTable(groupIdInput.value.trim());
+        
+        // Rebuild table on input change
+        groupIdInput.addEventListener("change", async () => {
+            const groupId = groupIdInput.value.trim();
+            if (groupId) {
+                await buildPerformanceTable(groupId);
+                await loadSavedResponses(groupId);
+            }
         });
-        // Initial build
-        buildPerformanceTable(groupIdInput.value.trim());
+        
+        // Initial build if group_id already has value
+        const initialGroupId = groupIdInput.value.trim();
+        if (initialGroupId) {
+            await buildPerformanceTable(initialGroupId);
+            await loadSavedResponses(initialGroupId);
+        } else {
+            // Build default table with 4 members
+            await buildPerformanceTable("", 4);
+        }
     }
+    
+    if (window.initPageCommon) window.initPageCommon();
 });
 </script>
 </body>

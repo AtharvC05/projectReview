@@ -23,8 +23,6 @@ protobuf==4.21.12
 pycparser==2.22
 pydyf==0.11.0
 PyMuPDF==1.23.8
-PyMuPDFb==1.23.7
-PyMySQL==1.1.0
 PyPDF2==3.0.1
 pyphen==0.17.2
 python-dateutil==2.9.0.post0
