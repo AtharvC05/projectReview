@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Review III - Implementation</title>
+    <title>SEM-II MOCK Review - Implementation and Testing</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/common-styles.css') }}">
 </head>
+
 <body>
     <a href="/auth/logout" class="logout-btn">Logout ➜]</a>
-    
     <div class="page-header">
         <div class="header-center">
-            <h1>Project Review - III</h1>
+            <h1>SEM-II MOCK Review</h1>
             <div class="year-badge-container">
                 {% if is_admin %}
                 <a href="/data-manager" class="year-badge" title="Change academic year in Data Manager">
@@ -29,7 +30,7 @@
                 <span class="menu-line"></span>
                 <span class="menu-line"></span>
             </button>
-            
+
             <div class="menu-dropdown" id="menuDropdown">
                 <!-- Admin-only items -->
                 {% if is_admin %}
@@ -37,8 +38,7 @@
                     <span class="icon">🗄️</span>
                     Database Manager
                 </a>
-                
-                
+
                 <a href="/pdf-viewer" class="menu-item">
                     <span class="icon">📄</span>
                     Generated PDFs
@@ -53,7 +53,6 @@
                     Attendance
                 </a>
                 <div class="menu-divider"></div>
-                
 
                 <!-- Review Pages (Available to all logged-in users) -->
                 <a href="/review1" class="menu-item">
@@ -65,11 +64,11 @@
                     <span class="icon">🎨</span>
                     Review II - Design
                 </a>
-                <a href="/review0" class="menu-item ">
+                <a href="/review0" class="menu-item">
                     <span class="icon">📌</span>
                     MOCK Review
                 </a>
-                <a href="/review3" class="menu-item current">
+                <a href="/review3" class="menu-item">
                     <span class="icon">⚙️</span>
                     Review III - Implementation
                 </a>
@@ -79,14 +78,14 @@
                     Review IV - Testing
                 </a>
 
-                <a href="/review6" class="menu-item">
+                <a href="/review6" class="menu-item current">
                     <span class="icon">📌</span>
                     SEM-II MOCK Review
                 </a>
 
                 <a href="/review5" class="menu-item">
                     <span class="icon">📊</span>
-                    Review V - Final
+                    Review V - Final Sheet
                 </a>
 
                 <div class="menu-divider"></div>
@@ -101,7 +100,7 @@
 
     <div class="content-wrapper">
         <form id="form-data">
-            
+
             <label for="group_id">Group ID:</label>
             <input type="text" id="group_id" name="group_id" placeholder="e.g., BIA-01" required autocomplete="off">
 
@@ -129,110 +128,86 @@
                 </div>
             </div>
 
-            <!-- IMPLEMENTATION QUESTIONNAIRE -->
+            <!-- IMPLEMENTATION AND TESTING QUESTIONNAIRE -->
             <div class="section">
-                <h3>IMPLEMENTATION (SOURCE CODE REVIEW CHECKLIST)</h3>
-                
+                <h3>IMPLEMENTATION AND TESTING</h3>
+
                 <div class="question">
-                    <label>1. Does the code completely and correctly implement the design?</label>
+                    <label>1. Is every feature tested?</label>
                     <div class="radio-group">
-                        <input type="radio" id="q3_1_1-y" name="que_3.1.1" value="Y" required>
-                        <label for="q3_1_1-y">Yes</label>
-                        <input type="radio" id="q3_1_1-n" name="que_3.1.1" value="N">
-                        <label for="q3_1_1-n">No</label>
-                        <input type="radio" id="q3_1_1-na" name="que_3.1.1" value="NA">
-                        <label for="q3_1_1-na">N/A</label>
-                        <input type="radio" id="q3_1_1-nc" name="que_3.1.1" value="NC">
-                        <label for="q3_1_1-nc">NC</label>
+                        <input type="radio" id="q6_1_1-y" name="que_6.1.1" value="Y" required>
+                        <label for="q6_1_1-y">Yes</label>
+                        <input type="radio" id="q6_1_1-n" name="que_6.1.1" value="N">
+                        <label for="q6_1_1-n">No</label>
+                        <input type="radio" id="q6_1_1-na" name="que_6.1.1" value="NA">
+                        <label for="q6_1_1-na">N/A</label>
+                        <input type="radio" id="q6_1_1-nc" name="que_6.1.1" value="NC">
+                        <label for="q6_1_1-nc">NC</label>
                     </div>
                 </div>
 
                 <div class="question">
-                    <label>2. Does the code comply with the Coding Standards?</label>
+                    <label>2. Are all functions, user screens and navigation tested?</label>
                     <div class="radio-group">
-                        <input type="radio" id="q3_1_2-y" name="que_3.1.2" value="Y" required>
-                        <label for="q3_1_2-y">Yes</label>
-                        <input type="radio" id="q3_1_2-n" name="que_3.1.2" value="N">
-                        <label for="q3_1_2-n">No</label>
-                        <input type="radio" id="q3_1_2-na" name="que_3.1.2" value="NA">
-                        <label for="q3_1_2-na">N/A</label>
-                        <input type="radio" id="q3_1_2-nc" name="que_3.1.2" value="NC">
-                        <label for="q3_1_2-nc">NC</label>
+                        <input type="radio" id="q6_1_2-y" name="que_6.1.2" value="Y" required>
+                        <label for="q6_1_2-y">Yes</label>
+                        <input type="radio" id="q6_1_2-n" name="que_6.1.2" value="N">
+                        <label for="q6_1_2-n">No</label>
+                        <input type="radio" id="q6_1_2-na" name="que_6.1.2" value="NA">
+                        <label for="q6_1_2-na">N/A</label>
+                        <input type="radio" id="q6_1_2-nc" name="que_6.1.2" value="NC">
+                        <label for="q6_1_2-nc">NC</label>
                     </div>
                 </div>
 
                 <div class="question">
-                    <label>3. Is the code well-structured, consistent in style, and consistently formatted?</label>
+                    <label>3. Are test cases designed? (manual and automated)</label>
                     <div class="radio-group">
-                        <input type="radio" id="q3_1_3-y" name="que_3.1.3" value="Y" required>
-                        <label for="q3_1_3-y">Yes</label>
-                        <input type="radio" id="q3_1_3-n" name="que_3.1.3" value="N">
-                        <label for="q3_1_3-n">No</label>
-                        <input type="radio" id="q3_1_3-na" name="que_3.1.3" value="NA">
-                        <label for="q3_1_3-na">N/A</label>
-                        <input type="radio" id="q3_1_3-nc" name="que_3.1.3" value="NC">
-                        <label for="q3_1_3-nc">NC</label>
+                        <input type="radio" id="q6_1_3-y" name="que_6.1.3" value="Y" required>
+                        <label for="q6_1_3-y">Yes</label>
+                        <input type="radio" id="q6_1_3-n" name="que_6.1.3" value="N">
+                        <label for="q6_1_3-n">No</label>
+                        <input type="radio" id="q6_1_3-na" name="que_6.1.3" value="NA">
+                        <label for="q6_1_3-na">N/A</label>
+                        <input type="radio" id="q6_1_3-nc" name="que_6.1.3" value="NC">
+                        <label for="q6_1_3-nc">NC</label>
                     </div>
                 </div>
 
                 <div class="question">
-                    <label>4. Does the implementation match the design?</label>
+                    <label>4. Is testing tool used?</label>
                     <div class="radio-group">
-                        <input type="radio" id="q3_1_4-y" name="que_3.1.4" value="Y" required>
-                        <label for="q3_1_4-y">Yes</label>
-                        <input type="radio" id="q3_1_4-n" name="que_3.1.4" value="N">
-                        <label for="q3_1_4-n">No</label>
-                        <input type="radio" id="q3_1_4-na" name="que_3.1.4" value="NA">
-                        <label for="q3_1_4-na">N/A</label>
-                        <input type="radio" id="q3_1_4-nc" name="que_3.1.4" value="NC">
-                        <label for="q3_1_4-nc">NC</label>
+                        <input type="radio" id="q6_1_4-y" name="que_6.1.4" value="Y" required>
+                        <label for="q6_1_4-y">Yes</label>
+                        <input type="radio" id="q6_1_4-n" name="que_6.1.4" value="N">
+                        <label for="q6_1_4-n">No</label>
+                        <input type="radio" id="q6_1_4-na" name="que_6.1.4" value="NA">
+                        <label for="q6_1_4-na">N/A</label>
+                        <input type="radio" id="q6_1_4-nc" name="que_6.1.4" value="NC">
+                        <label for="q6_1_4-nc">NC</label>
                     </div>
                 </div>
 
                 <div class="question">
-                    <label>5. Are all functions in the design coded?</label>
+                    <label>5. Is result analysis done properly and proper conclusion drawn?</label>
                     <div class="radio-group">
-                        <input type="radio" id="q3_1_5-y" name="que_3.1.5" value="Y" required>
-                        <label for="q3_1_5-y">Yes</label>
-                        <input type="radio" id="q3_1_5-n" name="que_3.1.5" value="N">
-                        <label for="q3_1_5-n">No</label>
-                        <input type="radio" id="q3_1_5-na" name="que_3.1.5" value="NA">
-                        <label for="q3_1_5-na">N/A</label>
-                        <input type="radio" id="q3_1_5-nc" name="que_3.1.5" value="NC">
-                        <label for="q3_1_5-nc">NC</label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DOCUMENTATION SECTION -->
-            <div class="section">
-                <h3>DOCUMENTATION</h3>
-                
-                <div class="question">
-                    <label>1. Is the code clearly and adequately documented?</label>
-                    <div class="radio-group">
-                        <input type="radio" id="q2_1-y" name="que_2.1" value="Y" required>
-                        <label for="q2_1-y">Yes</label>
-                        <input type="radio" id="q2_1-n" name="que_2.1" value="N">
-                        <label for="q2_1-n">No</label>
-                        <input type="radio" id="q2_1-na" name="que_2.1" value="NA">
-                        <label for="q2_1-na">N/A</label>
-                        <input type="radio" id="q2_1-nc" name="que_2.1" value="NC">
-                        <label for="q2_1-nc">NC</label>
+                        <input type="radio" id="q6_1_5-y" name="que_6.1.5" value="Y" required>
+                        <label for="q6_1_5-y">Yes</label>
+                        <input type="radio" id="q6_1_5-n" name="que_6.1.5" value="N">
+                        <label for="q6_1_5-n">No</label>
+                        <input type="radio" id="q6_1_5-na" name="que_6.1.5" value="NA">
+                        <label for="q6_1_5-na">N/A</label>
+                        <input type="radio" id="q6_1_5-nc" name="que_6.1.5" value="NC">
+                        <label for="q6_1_5-nc">NC</label>
                     </div>
                 </div>
 
                 <div class="question">
-                    <label>2. Are all comments consistent with the code?</label>
-                    <div class="radio-group">
-                        <input type="radio" id="q2_2-y" name="que_2.2" value="Y" required>
-                        <label for="q2_2-y">Yes</label>
-                        <input type="radio" id="q2_2-n" name="que_2.2" value="N">
-                        <label for="q2_2-n">No</label>
-                        <input type="radio" id="q2_2-na" name="que_2.2" value="NA">
-                        <label for="q2_2-na">N/A</label>
-                        <input type="radio" id="q2_2-nc" name="que_2.2" value="NC">
-                        <label for="q2_2-nc">NC</label>
+                    <label>6. Implementation status (code completion in percentage)</label>
+                    <div class="numeric-input">
+                        <div><input type="number" id="q6_1_6" name="que_6.1.6" min="0" max="100" step="0.1"
+                                placeholder="0-100" required></div>
+                        <div class="per">%</div>
                     </div>
                 </div>
             </div>
@@ -273,6 +248,58 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/common.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/review3.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/review6.js') }}"></script>
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeTheme();
+        });
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                setTheme(prefersDark ? 'dark' : 'light');
+            }
+
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    setTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+            document.body.classList.add('theme-transitioning');
+
+            const toggleBtn = document.querySelector('.theme-toggle');
+            if (toggleBtn) {
+                toggleBtn.classList.add('rotating');
+                setTimeout(() => toggleBtn.classList.remove('rotating'), 500);
+            }
+
+            setTheme(newTheme);
+
+            setTimeout(() => document.body.classList.remove('theme-transitioning'), 300);
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            const toggleBtn = document.querySelector('.theme-toggle');
+            if (toggleBtn) {
+                toggleBtn.setAttribute('aria-label',
+                    theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
+                );
+            }
+        }
+    </script>
 </body>
+
 </html>

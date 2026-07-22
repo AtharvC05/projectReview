@@ -57,7 +57,7 @@ def home():
 @app.route('/review/<int:review_num>')
 @login_required
 def review_page(review_num):
-    if 0 <= review_num <= 5:
+    if 0 <= review_num <= 6:
         return render_template(f'review{review_num}.html')
     return redirect("/")
 

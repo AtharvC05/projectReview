@@ -177,6 +177,7 @@
             <th>Review 2</th>
             <th>Review 3</th>
             <th>Review 4</th>
+            <th>SEM-II Mock</th>
           </tr>
         </thead>
         <tbody id="attendanceBody">
@@ -234,6 +235,9 @@
                 </td>
                 <td class="${student.review4_attendance ? 'attendance-present' : 'attendance-absent'}">
                   ${student.review4_attendance ? "P" : "A"}
+                </td>
+                <td class="${student.review6_attendance ? 'attendance-present' : 'attendance-absent'}">
+                  ${student.review6_attendance ? "P" : "A"}
                 </td>
               </tr>`;
             body.insertAdjacentHTML("beforeend", row);

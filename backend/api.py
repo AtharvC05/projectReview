@@ -43,6 +43,14 @@ from backend.sheet4 import (
     save_review4_responses,
     get_review4_responses,
 )
+from backend.sheet5 import (
+    update_review6_attendance,
+    get_group_members as get_review6_members,
+    save_review6_marks,
+    get_review6_marks,
+    save_review6_responses,
+    get_review6_responses,
+)
 
 # Import authentication decorators
 import backend.auth as auth
@@ -684,6 +692,111 @@ def api_generate_review4_pdf():
                     "message": "PDF generated successfully",
                     "pdf_url": f"/pdf/generate/4/{group_id}",
                     "download_url": f"/pdf/download/4/{group_id}"
+                }
+            ),
+            200,
+        )
+    return jsonify({"error": result["error"]}), 500
+
+
+# ==================== REVIEW 6 ROUTES (SEM-II MOCK) ====================
+
+@api_bp.route("/review6/attendance", methods=["POST"])
+@user_required
+def api_save_review6_attendance():
+    data = request.get_json()
+    group_id = data.get("group_id")
+    attendance = data.get("attendance")
+    if not group_id or not isinstance(attendance, list):
+        return jsonify({"error": "Invalid payload"}), 400
+    success = update_review6_attendance(group_id, attendance)
+    if success:
+        return jsonify({"message": "Attendance saved successfully"}), 200
+    return jsonify({"error": "Failed to save attendance"}), 500
+
+
+@api_bp.route("/review6/members", methods=["GET"])
+@user_required
+def api_get_review6_members():
+    group_id = request.args.get("group_id")
+    if not group_id:
+        return jsonify({"error": "Missing group_id"}), 400
+    members = get_review6_members(group_id)
+    return jsonify(members), 200
+
+
+@api_bp.route("/review6/marks", methods=["POST"])
+@user_required
+def api_save_review6_marks():
+    data = request.get_json()
+    marks_list = data.get("marks")
+    if not marks_list or not isinstance(marks_list, list):
+        return jsonify({"error": "Invalid payload"}), 400
+    for item in marks_list:
+        if "group_id" not in item or "roll_no" not in item:
+            return jsonify({"error": "Each mark entry must contain group_id and roll_no"}), 400
+    success = save_review6_marks(marks_list)
+    if success:
+        return jsonify({"message": "Marks saved successfully"}), 200
+    return jsonify({"error": "Failed to save marks"}), 500
+
+
+@api_bp.route("/review6/marks", methods=["GET"])
+@user_required
+def api_get_review6_marks():
+    group_id = request.args.get("group_id")
+    if not group_id:
+        return jsonify({"error": "Missing group_id"}), 400
+    marks = get_review6_marks(group_id)
+    return jsonify(marks), 200
+
+
+@api_bp.route("/review6/responses", methods=["POST"])
+@user_required
+def api_save_review6_responses():
+    data = request.get_json()
+    group_id = data.get("group_id")
+    date = data.get("date")
+    comments = data.get("comments")
+    responses = data.get("responses")
+    if not group_id or not date or not isinstance(responses, dict):
+        return jsonify({"error": "Invalid payload"}), 400
+    result = save_review6_responses(group_id, date, comments, responses)
+    if result["success"]:
+        return jsonify({"message": "Responses saved successfully"}), 200
+    return jsonify({"error": result.get("error", "Failed to save responses")}), 500
+
+
+@api_bp.route("/review6/responses", methods=["GET"])
+@user_required
+def api_get_review6_responses():
+    group_id = request.args.get("group_id")
+    if not group_id:
+        return jsonify({"error": "Missing group_id"}), 400
+    submission = get_review6_responses(group_id)
+    if submission:
+        return jsonify(submission), 200
+    return jsonify({"message": "No submission found"}), 404
+
+
+@api_bp.route("/review6/generate-pdf", methods=["POST"])
+@user_required
+def api_generate_review6_pdf():
+    from backend.pdf_generator import generate_review6_pdf
+
+    data = request.get_json()
+    group_id = data.get("group_id")
+    if not group_id:
+        return jsonify({"error": "Missing group_id"}), 400
+    result = generate_review6_pdf(group_id)
+    if result["success"]:
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "message": "PDF generated successfully",
+                    "pdf_url": f"/pdf/generate/6/{group_id}",
+                    "download_url": f"/pdf/download/6/{group_id}"
                 }
             ),
             200,

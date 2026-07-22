@@ -9,7 +9,7 @@ from typing import List, Dict, Optional, Any
 
 def validate_review_number(review_number: int) -> bool:
     """Validate review number is within acceptable range"""
-    return isinstance(review_number, int) and 0 <= review_number <= 5
+    return isinstance(review_number, int) and 0 <= review_number <= 6
 
 
 def validate_group_id(group_id: str) -> bool:
@@ -398,7 +398,8 @@ def save_review_responses(review_number: int, group_id: str, date: str,
         values = [db_group_id, date, comments[:1000] if comments else None]  # Limit comment length
         updates = ['comments = VALUES(comments)', 'submission_date = VALUES(submission_date)']
         
-        for resp in responses:
+        resp_list = [{'question_code': k, 'response_value': v} for k, v in responses.items()] if isinstance(responses, dict) else responses
+        for resp in resp_list:
             # Sanitize question code
             col_name = resp['question_code'].replace('.', '_')
             
@@ -608,8 +609,8 @@ def get_available_pdf_reports() -> List[Dict]:
         reports = []
         active_year = get_academic_year()
         
-        # Query for each review type (0-4)
-        for review_num in range(0, 5):
+        # Query for each review type (0-4, 6)
+        for review_num in [0, 1, 2, 3, 4, 6]:
             table_name = sanitize_table_name(review_num, 'group_responses')
             if not table_name:
                 continue

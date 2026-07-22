@@ -1,7 +1,7 @@
-// frontend/static/js/review4.js
+// frontend/static/js/review6.js
 
 const REVIEW_CONFIG = {
-    reviewNumber: 4,
+    reviewNumber: 6,
     criteria: [
         { name: "implementation", label: "1. 75% Implementation completed", max: 0, type: "text" },
         { name: "testing_coverage", label: "2. Testing (Unit/Integration/System) (10M)", max: 10, type: "number" },
@@ -11,8 +11,8 @@ const REVIEW_CONFIG = {
         { name: "question_answer", label: "6. Question and Answer (2M)", max: 2, type: "number" }
     ],
     totalMarks: 25,
-    previousReview: '/review3',
-    nextReview: '/review6'
+    previousReview: '/review4',
+    nextReview: '/review5'
 };
 
 // DOM ready - Initialize with config

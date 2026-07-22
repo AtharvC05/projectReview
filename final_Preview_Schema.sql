@@ -508,6 +508,106 @@ CREATE TABLE review4_group_responses (
 );
 
 
+-- ==================== REVIEW 6 DATABASE TABLES ====================
+
+-- 1. Performance Criteria Table
+CREATE TABLE review6_performance_criteria (
+    criteria_id VARCHAR(50) PRIMARY KEY,
+    criteria_text TEXT NOT NULL,
+    max_marks DECIMAL(4,1) NOT NULL,
+    display_order INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert Review 6 criteria
+INSERT INTO review6_performance_criteria (criteria_id, criteria_text, max_marks, display_order) VALUES
+('implementation', '1. 75% Implementation completed', 0, 1),
+('testing_coverage', '2. Testing (Unit/Integration/System) (10M)', 10, 2),
+('test_cases', '3. Test cases designed and executed (7M)', 7, 3),
+('result_analysis', '4. Result analysis and conclusion (3M)', 3, 4),
+('presentation_skills', '5. Presentation skills (3M)', 3, 5),
+('question_answer', '6. Question and Answer (2M)', 2, 6);
+
+-- 2. Marks Table (with triggers for auto-calculation) 
+CREATE TABLE review6_marks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    group_id VARCHAR(20) NOT NULL,
+    roll_no VARCHAR(20) NOT NULL,
+    implementation VARCHAR(1) DEFAULT NULL COMMENT 'Y/N field',
+    testing_coverage DECIMAL(4,1) DEFAULT 0,
+    test_cases DECIMAL(4,1) DEFAULT 0,
+    result_analysis DECIMAL(4,1) DEFAULT 0,
+    presentation_skills DECIMAL(4,1) DEFAULT 0,
+    question_answer DECIMAL(4,1) DEFAULT 0,
+    total DECIMAL(5,1) GENERATED ALWAYS AS (
+        COALESCE(testing_coverage, 0) + 
+        COALESCE(test_cases, 0) + 
+        COALESCE(result_analysis, 0) + 
+        COALESCE(presentation_skills, 0) + 
+        COALESCE(question_answer, 0)
+    ) STORED,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_group_student (group_id, roll_no),
+    INDEX idx_group (group_id),
+    INDEX idx_roll (roll_no)
+);
+
+-- 3. Questions Table
+CREATE TABLE review6_questions (
+    question_id VARCHAR(20) PRIMARY KEY,
+    section VARCHAR(100) NOT NULL,
+    question_text TEXT NOT NULL,
+    question_type VARCHAR(20) NOT NULL COMMENT 'radio or numeric',
+    display_order INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert Review 6 questions
+INSERT INTO review6_questions (question_id, section, question_text, question_type, display_order) VALUES
+('que_6.1.1', 'Implementation and Testing', 'Is every feature tested?', 'radio', 1),
+('que_6.1.2', 'Implementation and Testing', 'Are all functions, user screens and navigation tested?', 'radio', 2),
+('que_6.1.3', 'Implementation and Testing', 'Are test cases designed? (manual and automated)', 'radio', 3),
+('que_6.1.4', 'Implementation and Testing', 'Is testing tool used?', 'radio', 4),
+('que_6.1.5', 'Implementation and Testing', 'Is result analysis done properly and proper conclusion drawn?', 'radio', 5),
+('que_6.1.6', 'Implementation and Testing', 'Implementation status (code completion in percentage)', 'numeric', 6);
+
+-- 4. Group Responses Table
+CREATE TABLE review6_group_responses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    group_id VARCHAR(20) NOT NULL UNIQUE,
+    submission_date DATE NOT NULL,
+    comments TEXT,
+    -- Implementation and Testing section (que_6.1.x)
+    que_6_1_1 VARCHAR(3) DEFAULT NULL COMMENT 'Y/N/NA/NC',
+    que_6_1_2 VARCHAR(3) DEFAULT NULL COMMENT 'Y/N/NA/NC',
+    que_6_1_3 VARCHAR(3) DEFAULT NULL COMMENT 'Y/N/NA/NC',
+    que_6_1_4 VARCHAR(3) DEFAULT NULL COMMENT 'Y/N/NA/NC',
+    que_6_1_5 VARCHAR(3) DEFAULT NULL COMMENT 'Y/N/NA/NC',
+    que_6_1_6 DECIMAL(5,2) DEFAULT NULL COMMENT 'Implementation percentage',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_group (group_id)
+);
+
+-- Review 6 Deliverables
+CREATE TABLE IF NOT EXISTS review6_deliverables (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    deliverable_text TEXT NOT NULL,
+    display_order INT NOT NULL,
+    UNIQUE KEY unique_order (display_order),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO review6_deliverables (deliverable_text, display_order) VALUES
+('Detailed Design', 1),
+('100% of code implementation', 2),
+('Experimental Results', 3),
+('Result Evaluation', 4),
+('Test Cases', 5),
+('Result Analysis and Conclusion', 6),
+('Project Report', 7);
+
 
 
 

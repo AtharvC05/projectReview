@@ -10,6 +10,7 @@ function getCurrentReviewNumber() {
     if (path.includes('review2')) return 2;
     if (path.includes('review3')) return 3;
     if (path.includes('review4')) return 4;
+    if (path.includes('review6')) return 6;
     if (path.includes('review5')) return 5;
     if (path.includes('review0')) return 0;
     return 1; // default

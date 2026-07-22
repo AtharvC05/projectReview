@@ -10,7 +10,7 @@ import os
 from backend.db import get_connection, close_connection, add_year_prefix, strip_year_prefix, get_academic_year
 
 # Roman numeral mapping for review numbers
-REVIEW_ROMAN = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 0: 'Mock', 5: 'V'}
+REVIEW_ROMAN = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 0: 'Mock', 5: 'V', 6: 'SEM-II Mock'}
 
 class GenericReviewPDFGenerator:
     def __init__(self, output_path, review_number):
@@ -711,6 +711,8 @@ def generate_review_pdf(review_number, group_id, output_filename=None):
             section_title = f"REVIEW – {review_roman} CHECKLIST : IMPLEMENTATION"
         elif review_number == 4:
             section_title = f"REVIEW – {review_roman} CHECKLIST : TESTING"
+        elif review_number == 6:
+            section_title = f"REVIEW – SEM-II MOCK CHECKLIST : IMPLEMENTATION AND TESTING"
         else:
             section_title = f"REVIEW – {review_roman} CHECKLIST"
         
@@ -766,6 +768,10 @@ def generate_review3_pdf(group_id, output_filename=None):
 def generate_review4_pdf(group_id, output_filename=None):
     """Generate Review 4 PDF"""
     return generate_review_pdf(4, group_id, output_filename)
+
+def generate_review6_pdf(group_id, output_filename=None):
+    """Generate Review 6 (SEM-II MOCK) PDF"""
+    return generate_review_pdf(6, group_id, output_filename)
 
 
 def generate_review5_pdf(group_id, output_filename=None):
