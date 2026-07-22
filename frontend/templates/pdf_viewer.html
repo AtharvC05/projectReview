@@ -473,10 +473,12 @@
                     <label class="filter-label" for="review-filter">Review:</label>
                     <select id="review-filter" class="filter-select">
                         <option value="">All Reviews</option>
-                        <option value="1">Review 1</option>
-                        <option value="2">Review 2</option>
-                        <option value="3">Review 3</option>
-                        <option value="4">Review 4</option>
+                        <option value="0">SEM-I MOCK</option>
+                        <option value="1">Review I</option>
+                        <option value="2">Review II</option>
+                        <option value="3">Review III</option>
+                        <option value="4">Review IV</option>
+                        <option value="6">SEM-II MOCK</option>
                     </select>
                 </div>
 
@@ -682,10 +684,13 @@
 
             getReviewBadge(reviewNumber) {
                 const badges = {
+                    0: 'SEM-I MOCK',
                     1: 'Review I',
                     2: 'Review II',
                     3: 'Review III',
-                    4: 'Review IV'
+                    4: 'Review IV',
+                    5: 'Review V',
+                    6: 'SEM-II MOCK'
                 };
                 return badges[reviewNumber] || `Review ${reviewNumber}`;
             }
