@@ -171,7 +171,7 @@ class GenericReviewPDFGenerator:
         """Add group and project information"""
         project_title = str(group_data.get('project_title', '') or '')
         project_domain = str(group_data.get('project_domain', '') or '')
-        sponsor_company = str(group_data.get('sponsor_company', '') or '')
+        sponsor_company = str(group_data.get('sponsor_company', '') or '').strip()
         if not guide_name:
             guide_name = str(group_data.get('guide_name', '') or '')
 
@@ -180,28 +180,34 @@ class GenericReviewPDFGenerator:
         sponsor_para = Paragraph(sponsor_company, self.styles['TableTextSmall'])
         guide_para = Paragraph(guide_name, self.styles['TableTextSmall'])
 
+        has_sponsor = bool(sponsor_company and sponsor_company.lower() not in ['none', 'null', 'nan', '-', 'n/a'])
+
         info_data = [
             ['Group ID', group_data.get('group_id', ''), 'DATE', str(submission_date)],
             ['Project Domain', domain_para, 'Guide Name', guide_para],
-            ['Project Title', title_para, '', ''],
-            ['Sponsor Company', sponsor_para, '', '']
+            ['Project Title', title_para, '', '']
         ]
-        
-        col_widths = [1.35*inch, 2.15*inch, 1.0*inch, 2.0*inch]
-        info_table = Table(info_data, colWidths=col_widths)
-        info_table.setStyle(TableStyle([
+
+        style_commands = [
             ('FONT', (0, 0), (-1, -1), 'Helvetica', 9),
             ('FONT', (0, 0), (0, -1), 'Helvetica-Bold', 9),
             ('FONT', (2, 0), (2, 1), 'Helvetica-Bold', 9),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('SPAN', (1, 2), (3, 2)),
-            ('SPAN', (1, 3), (3, 3)),
             ('LEFTPADDING', (0, 0), (-1, -1), 5),
             ('RIGHTPADDING', (0, 0), (-1, -1), 5),
             ('TOPPADDING', (0, 0), (-1, -1), 4),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ]))
+        ]
+
+        if has_sponsor:
+            info_data.append(['Sponsor Company', sponsor_para, '', ''])
+            style_commands.append(('SPAN', (1, 3), (3, 3)))
+
+        col_widths = [1.35*inch, 2.15*inch, 1.0*inch, 2.0*inch]
+        info_table = Table(info_data, colWidths=col_widths)
+        info_table.setStyle(TableStyle(style_commands))
         
         self.elements.append(info_table)
         self.elements.append(Spacer(1, 0.12*inch))
