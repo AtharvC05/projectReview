@@ -296,31 +296,11 @@ def extract_all_group_ids(row_data):
             continue
         
         cell_str = str(cell_value).upper().strip()
-        
-        # Standard format: BIA-01, BIB-02
-        standard_matches = re.findall(r'\b(BI[AB]-?\s*\d{1,2})\b', cell_str)
-        for match in standard_matches:
-            clean_match = re.sub(r'(BI[AB])[-\s]*(\d{1,2})', r'\1-\2', match)
-            if len(clean_match) == 5:
-                clean_match = f"{clean_match[:4]}0{clean_match[4:]}"
-            all_groups.add(clean_match)
-        
-        # No hyphen format: BIA01, BIB02
-        no_hyphen_matches = re.findall(r'\b(BI[AB]\d{1,2})\b', cell_str)
-        for match in no_hyphen_matches:
-            if len(match) == 5:
-                formatted = f"{match[:3]}-{match[3:]}"
-            elif len(match) == 4:
-                formatted = f"{match[:3]}-0{match[3:]}"
-            else:
-                formatted = match
-            all_groups.add(formatted)
-        
-        # Space format: BIA 01, BIB 02
-        space_matches = re.findall(r'\b(BI[AB])\s+(\d{1,2})\b', cell_str)
-        for prefix, num in space_matches:
-            formatted = f"{prefix}-{num.zfill(2)}"
-            all_groups.add(formatted)
+        matches = re.findall(r'\b(BI[AB][-_\s]*\d{1,2})\b', cell_str)
+        for match in matches:
+            normalized = db.normalize_group_id(match)
+            if normalized:
+                all_groups.add(normalized)
     
     return sorted(list(all_groups))
 
@@ -382,12 +362,8 @@ def process_division_enhanced_with_normalization(df, division_name):
             if pd.notnull(group_no_value) and str(group_no_value).strip():
                 group_id = str(group_no_value).strip()
                 
-                # Normalize group ID format
-                if group_id.startswith('BI'):
-                    pass  # Already in correct format
-                elif group_id.startswith('BIA') or group_id.startswith('BIB'):
-                    if '-' not in group_id and len(group_id) >= 5:
-                        group_id = f"{group_id[:3]}-{group_id[3:]}"
+                # Normalize group ID format so BIA01, BIA1, BIA-1 all become BIA-01
+                group_id = db.normalize_group_id(group_id)
                 
                 # Insert project data with normalized column access
                 try:

@@ -119,16 +119,30 @@ def set_academic_year(year: str):
     _save_academic_year_to_db(year)
     print(f"📅 Academic year updated to: {year}")
 
+def normalize_group_id(val: str) -> str:
+    """Normalize Group ID so that BIA01, BIA1, BIA 01, BIA-1 all become BIA-01"""
+    if not val:
+        return val
+    s = str(val).strip()
+    match = re.match(r'^(BI[AB])[-_\s]*(\d{1,2})$', s, re.IGNORECASE)
+    if match:
+        prefix = match.group(1).upper()
+        num = match.group(2).zfill(2)
+        return f"{prefix}-{num}"
+    return s
+
 def add_year_prefix(val, year=None):
     """Prepend the current academic year prefix to a value if not already present"""
     if not val:
         return val
+    val_str = str(val).strip()
     if year is None:
         year = get_academic_year()
     prefix = f"{year}_"
-    if str(val).startswith(prefix):
-        return val
-    return f"{prefix}{val}"
+    if val_str.startswith(prefix):
+        raw = val_str[len(prefix):]
+        return f"{prefix}{normalize_group_id(raw)}"
+    return f"{prefix}{normalize_group_id(val_str)}"
 
 def strip_year_prefix(val):
     """Remove any academic year prefix from a value"""
