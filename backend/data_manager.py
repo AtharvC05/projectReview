@@ -506,44 +506,75 @@ def process_all_data_with_normalization(div_a, div_b, sched):
     div_a_groups, div_a_members = process_division_enhanced_with_normalization(div_a, 'A')
     div_b_groups, div_b_members = process_division_enhanced_with_normalization(div_b, 'B')
     
-    # Process schedule with normalization
+    # Process schedule with Track block grouping (handling merged Excel rows)
     schedule_processed = 0
     all_scheduled_groups = set()
     
     # Normalize schedule DataFrame
     sched = normalize_dataframe_columns(sched)
     
+    # Step 1: Group rows by Track block
+    track_blocks = []
+    current_track = None
+    panel_texts_acc = []
+    row_values_acc = []
+    location_acc = ""
+
     for i, row in sched.iterrows():
-        try:
-            track = row.get('Track')
-            if pd.isnull(track):
-                continue
+        track_val = row.get('Track')
+        # Check if row starts a new track block (e.g. 1, 2, 3...)
+        if pd.notnull(track_val) and str(track_val).strip().replace('.', '').isdigit():
+            if current_track is not None:
+                track_blocks.append({
+                    'track': current_track,
+                    'panel_texts': panel_texts_acc,
+                    'row_values': row_values_acc,
+                    'location': location_acc
+                })
+            current_track = int(float(str(track_val).strip()))
+            panel_texts_acc = []
+            row_values_acc = []
+            location_acc = ""
+            
+        if current_track is not None:
+            p_text = str(row.get('Name of the Panel', ''))
+            if p_text and p_text.lower() != 'nan':
+                panel_texts_acc.append(p_text)
                 
-            track = int(track)
-            
-            # Use normalized column name and parse multiline/merged/slash formatted names
-            panel_text = str(row.get('Name of the Panel', ''))
-            panel_profs = parse_panel_professors(panel_text)
-            
+            loc = str(row.get('Location', '')).strip()
+            if loc and loc.lower() != 'nan':
+                location_acc = loc
+                
+            row_values = [str(val) for val in row.values if pd.notnull(val)]
+            row_values_acc.extend(row_values)
+
+    if current_track is not None:
+        track_blocks.append({
+            'track': current_track,
+            'panel_texts': panel_texts_acc,
+            'row_values': row_values_acc,
+            'location': location_acc
+        })
+
+    # Step 2: Process each Track block
+    for block in track_blocks:
+        try:
+            track = block['track']
+            panel_profs = parse_panel_professors("\n".join(block['panel_texts']))
             if not panel_profs:
                 panel_profs = [f"Default Panel {track} Prof 1", f"Default Panel {track} Prof 2", f"Default Panel {track} Prof 3"]
-            
-            # Use normalized column name
-            location = str(row.get('Location', '')).strip() if pd.notnull(row.get('Location', '')) else f"Room {track}"
-            
-            # Extract group IDs
-            row_values = [str(val) for val in row.values if pd.notnull(val)]
-            group_ids = extract_all_group_ids(row_values)
+                
+            location = block['location'] if block['location'] else f"Room {track}"
+            group_ids = extract_all_group_ids(block['row_values'])
             
             if not group_ids:
                 continue
-            
+                
             assignments = assign_evaluators_from_panel(panel_profs, group_ids)
             
             for assignment in assignments:
                 try:
                     group_id = assignment['group_id']
-                    
                     cur.execute("""
                         INSERT INTO panel_assignments
                         (group_id, track, panel_professors, location, guide, reviewer1, reviewer2, reviewer3)
@@ -572,8 +603,8 @@ def process_all_data_with_normalization(div_a, div_b, sched):
             schedule_processed += 1
             
         except Exception as e:
-            print(f"Error processing schedule row {i}: {e}", flush=True)
-            logger.warning(f"Error processing schedule row {i}: {str(e)}")
+            print(f"Error processing schedule block for track {block.get('track')}: {e}", flush=True)
+            logger.warning(f"Error processing schedule block for track {block.get('track')}: {str(e)}")
             continue
     
     conn.commit()
