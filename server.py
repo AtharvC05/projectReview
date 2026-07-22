@@ -1,8 +1,40 @@
 # server.py
-from flask import Flask, render_template, redirect, session
+from flask import Flask, render_template, redirect, session, jsonify
 import os
+import logging
+from collections import deque
 from dotenv import load_dotenv
 load_dotenv()
+
+# Setup in-memory log buffer for admin log viewer
+LOG_BUFFER = deque(maxlen=500)
+
+class SystemLogHandler(logging.Handler):
+    def emit(self, record):
+        try:
+            log_entry = {
+                'timestamp': self.formatter.formatTime(record) if self.formatter else str(record.created),
+                'level': record.levelname,
+                'name': record.name,
+                'message': record.getMessage()
+            }
+            LOG_BUFFER.append(log_entry)
+        except Exception:
+            pass
+
+log_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s', '%Y-%m-%d %H:%M:%S')
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(log_formatter)
+
+sys_handler = SystemLogHandler()
+sys_handler.setFormatter(log_formatter)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(stream_handler)
+root_logger.addHandler(sys_handler)
+
 from backend.db import get_connection, close_connection, get_academic_year
 import backend.data_manager as data_manager
 from backend.api import api_bp
@@ -11,7 +43,6 @@ import backend.scheduler as scheduler
 from backend.pdf_api import pdf_bp 
 
 app = Flask(__name__, template_folder='frontend/templates', static_folder='frontend/static')
-
 
 # Set secret key for sessions
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-in-production-2024')
@@ -70,6 +101,21 @@ def data_manager_page():
 @admin_required 
 def pdf_viewer_page():
     return render_template('pdf_viewer.html')
+
+@app.route('/system-logs')
+@admin_required
+def system_logs_page():
+    """Render the system logs page"""
+    return render_template('system_logs.html')
+
+@app.route('/api/admin/logs')
+@admin_required
+def get_system_logs_api():
+    """Return recent system logs"""
+    return jsonify({
+        'success': True,
+        'logs': list(LOG_BUFFER)
+    })
 
 
 # Basic production-ready error handlers
