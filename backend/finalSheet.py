@@ -36,7 +36,6 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
                 p.group_id,
                 p.project_title,
                 p.guide_name,
-                p.mentor_name,
                 p.division,
                 p.project_domain,
                 p.sponsor_company,

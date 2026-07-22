@@ -416,15 +416,15 @@ def process_division_enhanced_with_normalization(df, division_name):
                     cur.execute(
                         """INSERT INTO projects 
                            (group_id, division, project_domain, project_title, sponsor_company, guide_name, 
-                            mentor_name, mentor_email, mentor_mobile, evaluator1_name, evaluator2_name) 
-                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            evaluator1_name, evaluator2_name) 
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                            ON DUPLICATE KEY UPDATE
                            division = VALUES(division),
                            project_domain = VALUES(project_domain),
                            project_title = VALUES(project_title),
                            sponsor_company = VALUES(sponsor_company),
                            guide_name = VALUES(guide_name)""",
-                        (db_group_id, division_name, project_domain, project_title, sponsor_company, guide_name, "", "", "", "", "")
+                        (db_group_id, division_name, project_domain, project_title, sponsor_company, guide_name, "", "")
                     )
                     
                     if group_id not in processed_groups:
@@ -452,22 +452,16 @@ def process_division_enhanced_with_normalization(df, division_name):
                     roll_no = str(roll_no_val).strip()
                     student_name = str(student_name_val).strip()[:100]
                     
-                    contact_val = row.get('Contact details', '')
-                    if isinstance(contact_val, pd.Series):
-                        contact_val = contact_val.iloc[0] if not contact_val.empty else ''
-                    contact_details = str(contact_val).strip() if pd.notnull(contact_val) else ""
-                    
                     if roll_no and student_name:
                         db_group_id = db.add_year_prefix(group_id)
                         db_roll_no = db.add_year_prefix(roll_no)
                         cur.execute(
-                            """INSERT INTO members (group_id, roll_no, student_name, contact_details) 
-                               VALUES (%s, %s, %s, %s)
+                            """INSERT INTO members (group_id, roll_no, student_name) 
+                               VALUES (%s, %s, %s)
                                ON DUPLICATE KEY UPDATE
                                student_name = VALUES(student_name),
-                               contact_details = VALUES(contact_details),
                                group_id = VALUES(group_id)""",
-                            (db_group_id, db_roll_no, student_name, contact_details)
+                            (db_group_id, db_roll_no, student_name)
                         )
                         processed_members += 1
 
@@ -597,7 +591,6 @@ def generate_cell_mapping(div_a, div_b, sched, div_a_sheet, div_b_sheet, schedul
             mapping['div_a'][f'{actual_row}'] = {
                 'roll_no': {'col': 'B', 'value': str(row.get('Roll No.', ''))},
                 'student_name': {'col': 'C', 'value': str(row.get('Name of the group member', ''))},
-                'contact_details': {'col': 'D', 'value': str(row.get('Contact details', ''))},
             }
     
     # Map Division B editable fields  
@@ -607,7 +600,6 @@ def generate_cell_mapping(div_a, div_b, sched, div_a_sheet, div_b_sheet, schedul
             mapping['div_b'][f'{actual_row}'] = {
                 'roll_no': {'col': 'B', 'value': str(row.get('Roll No.', ''))},
                 'student_name': {'col': 'C', 'value': str(row.get('Name of the group member', ''))},
-                'contact_details': {'col': 'D', 'value': str(row.get('Contact details', ''))},
             }
     
     # Map Schedule editable fields
@@ -898,11 +890,10 @@ def update_division_field(cursor, division, row, col, new_value):
         0: 'group_id',      # Group No.
         1: 'roll_no',       # Roll No.
         2: 'student_name',  # Name of group member
-        3: 'contact_details', # Contact details
-        4: 'project_domain', # Project Domain
-        5: 'project_title',  # Title of Project
-        6: 'sponsor_company', # Sponsor Company
-        7: 'guide_name'      # Guide Name
+        3: 'project_domain', # Project Domain
+        4: 'project_title',  # Title of Project
+        5: 'sponsor_company', # Sponsor Company
+        6: 'guide_name'      # Guide Name
     }
     
     field_name = column_mappings.get(col)
@@ -931,15 +922,15 @@ def update_division_field(cursor, division, row, col, new_value):
                 WHERE p.division = %s AND p.group_id LIKE %s
                 LIMIT 1 OFFSET %s
             """, (db.add_year_prefix(new_value), division, f"{active_year}_%", row - 1))
-        elif field_name in ['student_name', 'contact_details']:
+        elif field_name == 'student_name':
             # Update members table
             cursor.execute("""
                 UPDATE members m
                 JOIN projects p ON m.group_id = p.group_id
-                SET m.{} = %s
+                SET m.student_name = %s
                 WHERE p.division = %s AND p.group_id LIKE %s
                 LIMIT 1 OFFSET %s
-            """.format(field_name), (new_value, division, f"{active_year}_%", row - 1))
+            """, (new_value, division, f"{active_year}_%", row - 1))
         elif field_name in ['project_domain', 'project_title', 'sponsor_company', 'guide_name']:
             # Update projects table
             cursor.execute("""
@@ -1033,8 +1024,7 @@ def export_formatted_excel():
             SELECT p.group_id, p.division, p.project_domain, p.project_title, 
                    p.sponsor_company, p.guide_name, p.evaluator1_name, p.evaluator2_name,
                    COALESCE(m.roll_no, '') as roll_no, 
-                   COALESCE(m.student_name, '') as student_name, 
-                   COALESCE(m.contact_details, '') as contact_details
+                   COALESCE(m.student_name, '') as student_name
             FROM projects p 
             LEFT JOIN members m ON p.group_id = m.group_id
             WHERE (p.group_id IS NOT NULL OR m.roll_no IS NOT NULL)
@@ -1124,10 +1114,6 @@ def update_division_sheet_formatted(ws, data, division):
                 # Update student-level information
                 update_cell_preserve_format(ws, current_row, 2, row_data.get('roll_no', ''))
                 update_cell_preserve_format(ws, current_row, 3, row_data.get('student_name', ''))
-                
-                contact_details = row_data.get('contact_details', '') or ''
-                if contact_details and contact_details != 'None':
-                    update_cell_preserve_format(ws, current_row, 4, contact_details)
                 
                 current_row += 1
                 

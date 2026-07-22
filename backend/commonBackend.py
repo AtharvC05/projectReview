@@ -624,9 +624,6 @@ def get_available_pdf_reports() -> List[Dict]:
                     p.guide_name,
                     p.division,
                     p.project_domain,
-                    p.mentor_name,
-                    p.mentor_email,
-                    p.mentor_mobile,
                     {review_num} AS review_number
                 FROM {table_name} r
                 JOIN projects p ON r.group_id = p.group_id
@@ -799,7 +796,6 @@ def get_all_groups_with_attendance() -> List[Dict]:
                 group_id,
                 roll_no,
                 student_name,
-                contact_details,
                 review0_attendance,
                 review1_attendance,
                 review2_attendance,
@@ -830,7 +826,6 @@ def get_all_groups_with_attendance() -> List[Dict]:
                 'member_id': member['member_id'],
                 'roll_no': roll_no,
                 'student_name': member['student_name'],
-                'contact_details': member['contact_details'],
                 'review0_attendance': bool(member['review0_attendance']),
                 'review1_attendance': bool(member['review1_attendance']),
                 'review2_attendance': bool(member['review2_attendance']),
