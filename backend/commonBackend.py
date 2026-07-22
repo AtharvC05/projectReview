@@ -804,7 +804,8 @@ def get_all_groups_with_attendance() -> List[Dict]:
                 review1_attendance,
                 review2_attendance,
                 review3_attendance,
-                review4_attendance
+                review4_attendance,
+                review6_attendance
             FROM members
             WHERE group_id LIKE %s
             ORDER BY group_id, roll_no
@@ -834,7 +835,8 @@ def get_all_groups_with_attendance() -> List[Dict]:
                 'review1_attendance': bool(member['review1_attendance']),
                 'review2_attendance': bool(member['review2_attendance']),
                 'review3_attendance': bool(member['review3_attendance']),
-                'review4_attendance': bool(member['review4_attendance'])
+                'review4_attendance': bool(member['review4_attendance']),
+                'review6_attendance': bool(member['review6_attendance'])
             })
         
         # Convert dictionary to list
@@ -870,10 +872,12 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
                 m.group_id,
                 m.roll_no,
                 m.student_name,
+                m.review0_attendance,
                 m.review1_attendance,
                 m.review2_attendance,
                 m.review3_attendance,
                 m.review4_attendance,
+                m.review6_attendance,
                 p.project_title,
                 p.division
             FROM members m
@@ -945,7 +949,7 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
             
             # Table data
             table_data = [
-                ['Roll No', 'Student Name', 'Review 1', 'Review 2', 'Review 3', 'Review 4']
+                ['Roll No', 'Student Name', 'Review 1', 'Review 2', 'SEM-I Mock', 'Review 3', 'Review 4', 'SEM-II Mock']
             ]
             
             for member in group_data['members']:
@@ -954,12 +958,14 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
                     member['student_name'],
                     'P' if member['review1_attendance'] else 'A',
                     'P' if member['review2_attendance'] else 'A',
+                    'P' if member.get('review0_attendance') else 'A',
                     'P' if member['review3_attendance'] else 'A',
-                    'P' if member['review4_attendance'] else 'A'
+                    'P' if member['review4_attendance'] else 'A',
+                    'P' if member.get('review6_attendance') else 'A'
                 ])
             
             # Create table
-            table = Table(table_data, colWidths=[1.2*inch, 2.5*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch])
+            table = Table(table_data, colWidths=[1.1*inch, 2.0*inch, 0.65*inch, 0.65*inch, 0.85*inch, 0.65*inch, 0.65*inch, 0.85*inch])
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),

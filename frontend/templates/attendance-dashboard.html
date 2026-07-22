@@ -175,13 +175,14 @@
             <th>Student Name</th>
             <th>Review 1</th>
             <th>Review 2</th>
+            <th>SEM-I Mock</th>
             <th>Review 3</th>
             <th>Review 4</th>
             <th>SEM-II Mock</th>
           </tr>
         </thead>
         <tbody id="attendanceBody">
-          <tr><td colspan="7" class="loading">Click "Fetch Attendance" to load data</td></tr>
+          <tr><td colspan="8" class="loading">Click "Fetch Attendance" to load data</td></tr>
         </tbody>
       </table>
     </div>
@@ -191,7 +192,7 @@
 
     async function fetchGroups() {
       const body = document.getElementById("attendanceBody");
-      body.innerHTML = `<tr><td colspan="7" class="loading">Loading groups...</td></tr>`;
+      body.innerHTML = `<tr><td colspan="8" class="loading">Loading groups...</td></tr>`;
       
       try {
         const res = await fetch("/api/groups");
@@ -203,7 +204,7 @@
         const groups = await res.json();
         
         if (!groups || groups.length === 0) {
-          body.innerHTML = `<tr><td colspan="7" class="loading">No groups found</td></tr>`;
+          body.innerHTML = `<tr><td colspan="8" class="loading">No groups found</td></tr>`;
           showNotification('No groups found', 'info');
           return;
         }
@@ -214,7 +215,7 @@
           // Add group header row
           const groupHeader = `
             <tr class="batch-header">
-              <td colspan="7">Group ${group.group_id} (${group.members.length} members)</td>
+              <td colspan="8">Group ${group.group_id} (${group.members.length} members)</td>
             </tr>`;
           body.insertAdjacentHTML("beforeend", groupHeader);
           
@@ -229,6 +230,9 @@
                 </td>
                 <td class="${student.review2_attendance ? 'attendance-present' : 'attendance-absent'}">
                   ${student.review2_attendance ? "P" : "A"}
+                </td>
+                <td class="${student.review0_attendance ? 'attendance-present' : 'attendance-absent'}">
+                  ${student.review0_attendance ? "P" : "A"}
                 </td>
                 <td class="${student.review3_attendance ? 'attendance-present' : 'attendance-absent'}">
                   ${student.review3_attendance ? "P" : "A"}
