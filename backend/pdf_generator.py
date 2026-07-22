@@ -7,7 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from datetime import datetime
 import os
-from backend.db import get_connection, close_connection
+from backend.db import get_connection, close_connection, add_year_prefix, strip_year_prefix, get_academic_year
 
 # Roman numeral mapping for review numbers
 REVIEW_ROMAN = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 0: 'Mock', 5: 'V'}
@@ -590,12 +590,17 @@ def generate_review_pdf(review_number, group_id, output_filename=None):
     try:
         cursor = conn.cursor(dictionary=True)
         
+        db_group_id = add_year_prefix(group_id)
+        
         # Fetch project info
-        cursor.execute("SELECT * FROM projects WHERE group_id = %s", (group_id,))
+        cursor.execute("SELECT * FROM projects WHERE group_id = %s", (db_group_id,))
         project_data = cursor.fetchone()
         
         if not project_data:
             return {'success': False, 'error': f'No project found for group {group_id}'}
+        
+        # Strip year prefix
+        project_data['group_id'] = strip_year_prefix(project_data['group_id'])
         
         # Fetch members
         cursor.execute("""
@@ -603,30 +608,42 @@ def generate_review_pdf(review_number, group_id, output_filename=None):
             FROM members 
             WHERE group_id = %s 
             ORDER BY roll_no
-        """, (group_id,))
+        """, (db_group_id,))
         members = cursor.fetchall()
         
         if not members:
             return {'success': False, 'error': f'No members found for group {group_id}'}
+            
+        # Strip roll no prefix
+        for m in members:
+            m['roll_no'] = strip_year_prefix(m['roll_no'])
         
         # Fetch marks
         cursor.execute(f"""
             SELECT * FROM review{review_number}_marks 
             WHERE group_id = %s 
             ORDER BY roll_no
-        """, (group_id,))
+        """, (db_group_id,))
         marks_data = cursor.fetchall()
+        
+        # Strip roll no prefix in marks
+        for m in marks_data:
+            m['roll_no'] = strip_year_prefix(m['roll_no'])
         
         # Fetch questionnaire responses
         cursor.execute(f"""
             SELECT * FROM review{review_number}_group_responses 
             WHERE group_id = %s
-        """, (group_id,))
+        """, (db_group_id,))
         responses_data = cursor.fetchone()
         
         if not responses_data:
             return {'success': False, 'error': f'No review responses found for group {group_id}'}
         
+        # Strip prefix if key exists
+        if responses_data and 'group_id' in responses_data:
+            responses_data['group_id'] = strip_year_prefix(responses_data['group_id'])
+            
         # Calculate academic year
         submission_date = responses_data['submission_date']
         if isinstance(submission_date, str):
@@ -676,7 +693,7 @@ def generate_review_pdf(review_number, group_id, output_filename=None):
             SELECT reviewer1, reviewer2, guide 
             FROM panel_assignments 
             WHERE group_id = %s
-        """, (group_id,))
+        """, (db_group_id,))
         panel_data = cursor.fetchone()
 
         reviewer1_name = None
@@ -700,7 +717,10 @@ def generate_review_pdf(review_number, group_id, output_filename=None):
         
         # Generate PDF
         pdf = GenericReviewPDFGenerator(output_path, review_number)
-        academic_year = pdf.calculate_academic_year(submission_date)
+        # Use admin-set academic year from DB (persisted in system_settings)
+        # This ensures the PDF always shows the year the admin has configured,
+        # not a year derived from the submission date.
+        academic_year = get_academic_year()
         
         # Determine section title for checklist
         review_roman = REVIEW_ROMAN.get(review_number, str(review_number))
@@ -805,7 +825,7 @@ def generate_review5_pdf(group_id, output_filename=None):
     pdf.review_roman = "I to IV" # Override for the title
     
     # Manually calculate academic year as there is no submission date for review 5
-    academic_year = f"{datetime.now().year}-{str(datetime.now().year + 1)[2:]}"
+    academic_year = get_academic_year()
 
     # 4. Build PDF content
     # Header
@@ -820,23 +840,32 @@ def generate_review5_pdf(group_id, output_filename=None):
     for i, member in enumerate(members, 1):
         roll_no = member['roll_no']
         
-        r1_marks = float(review_marks.get('review1', {}).get(roll_no, 0) or 0)
-        r2_marks = float(review_marks.get('review2', {}).get(roll_no, 0) or 0)
-        r3_marks = float(review_marks.get('review3', {}).get(roll_no, 0) or 0)
-        r4_marks = float(review_marks.get('review4', {}).get(roll_no, 0) or 0)
-        
-        total_marks = r1_marks + r2_marks + r3_marks + r4_marks
-        total_str = f"{total_marks:.0f}" if total_marks == int(total_marks) else f"{total_marks:.1f}"
+        r1_att = bool(member.get('review1_attendance'))
+        r2_att = bool(member.get('review2_attendance'))
+        r3_att = bool(member.get('review3_attendance'))
+        r4_att = bool(member.get('review4_attendance'))
 
+        r1_val = float(review_marks.get('review1', {}).get(roll_no, 0) or 0)
+        r2_val = float(review_marks.get('review2', {}).get(roll_no, 0) or 0)
+        r3_val = float(review_marks.get('review3', {}).get(roll_no, 0) or 0)
+        r4_val = float(review_marks.get('review4', {}).get(roll_no, 0) or 0)
+        
+        r1_str = f"{r1_val:.1f}" if r1_att else "Absent"
+        r2_str = f"{r2_val:.1f}" if r2_att else "Absent"
+        r3_str = f"{r3_val:.1f}" if r3_att else "Absent"
+        r4_str = f"{r4_val:.1f}" if r4_att else "Absent"
+
+        total_marks = (r1_val if r1_att else 0) + (r2_val if r2_att else 0) + (r3_val if r3_att else 0) + (r4_val if r4_att else 0)
+        total_str = f"{total_marks:.0f}" if total_marks == int(total_marks) else f"{total_marks:.1f}"
 
         row = [
             str(i),
             roll_no,
             member['student_name'],
-            str(r1_marks or 0),
-            str(r2_marks or 0),
-            str(r3_marks or 0),
-            str(r4_marks or 0),
+            r1_str,
+            r2_str,
+            r3_str,
+            r4_str,
             Paragraph(f"<b>{total_str}</b>", pdf.styles['CenteredNormal']),
             '' # Placeholder for signature
         ]

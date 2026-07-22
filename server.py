@@ -3,7 +3,7 @@ from flask import Flask, render_template, redirect, session
 import os
 from dotenv import load_dotenv
 load_dotenv()
-from backend.db import get_connection, close_connection
+from backend.db import get_connection, close_connection, get_academic_year
 import backend.data_manager as data_manager
 from backend.api import api_bp
 import backend.auth as auth
@@ -36,13 +36,16 @@ def inject_user_role():
         return {
             'is_admin': session.get('role') == 'admin',
             'current_user': session.get('username'),
-            'user_role': session.get('role')
+            'user_role': session.get('role'),
+            'academic_year': get_academic_year()
         }
     return {
         'is_admin': False,
         'current_user': None,
-        'user_role': None
+        'user_role': None,
+        'academic_year': get_academic_year()
     }
+
 
 # Main routes
 @app.route('/')
@@ -103,13 +106,13 @@ def attendance_dashboard():
 @login_required
 def final_sheet_page():
     """Render the final summary sheet page"""
-    return render_template('final_sheet.html')
+    return redirect('/review5')
 
 # ================== MAIN APPLICATION STARTUP ==================
 
 if __name__ == '__main__':
     host = os.getenv('HOST', '0.0.0.0')
-    port = int(os.getenv('PORT', '5000'))
+    port = int(os.getenv('PORT', '4040'))
     debug = os.getenv('FLASK_DEBUG', '0') == '1'
 
     # Initialize default users

@@ -854,3 +854,36 @@ def api_save_final_comments():
         }), 200
     else:
         return jsonify({'error': 'Failed to save comments'}), 500
+
+
+# ================== ACADEMIC YEAR ENDPOINTS ==================
+
+@api_bp.route("/academic-year", methods=["GET"])
+@login_required
+def api_get_academic_year():
+    import backend.db as db
+    return jsonify({
+        "success": True,
+        "academic_year": db.get_academic_year(),
+        "is_admin": session.get('role') == 'admin'
+    }), 200
+
+
+@api_bp.route("/academic-year", methods=["POST"])
+@admin_required   # ← Only admins can change the year
+def api_set_academic_year():
+    import backend.db as db
+    import re
+    data = request.get_json()
+    year = data.get("academic_year", "").strip()
+    if not year:
+        return jsonify({"error": "Academic year is required"}), 400
+    # Validate strict YYYY-YY format
+    if not re.match(r'^\d{4}-\d{2}$', year):
+        return jsonify({"error": "Invalid format. Use YYYY-YY (e.g. 2025-26)"}), 400
+    db.set_academic_year(year)
+    return jsonify({
+        "success": True,
+        "message": f"Academic year updated to {year} server-wide",
+        "academic_year": year
+    }), 200

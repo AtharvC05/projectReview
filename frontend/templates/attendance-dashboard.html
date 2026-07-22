@@ -127,19 +127,43 @@
       color: #dc2626;
       font-weight: bold;
     }
+    .year-badge-container {
+      text-align: center;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .year-badge {
+      display: inline-block;
+      vertical-align: middle;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #4a5568 !important;
+      background: #eef2f7;
+      border: 1px solid #cbd5e0;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      margin: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      text-shadow: none !important;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
       <h1>Attendance Dashboard</h1>
+      <div class="year-badge-container">
+        <span class="year-badge">Academic Year: {{ academic_year }}</span>
+      </div>
     </div>
 
     <div class="controls">
       <!-- <button class="btn btn-primary" onclick="fetchAttendance()">Fetch All Attendance</button> -->
       <button class="btn btn-primary" onclick="fetchGroups()">Fetch Attendance</button>
       <button class="btn btn-success" onclick="generatePDF()">Download PDF</button>
-      <a href="/reviews" class="btn btn-info">Go to Review System</a>
+      <a href="/review1" class="btn btn-info">Go to Review System</a>
     </div>
 
     <div class="schedule-table">
@@ -277,7 +301,7 @@
 
     // Auto-load data when page loads
     document.addEventListener('DOMContentLoaded', function() {
-      fetchAttendance();
+      fetchGroups();
     });
   </script>
 </body>

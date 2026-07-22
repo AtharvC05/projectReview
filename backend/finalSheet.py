@@ -1,5 +1,5 @@
 # backend/finalSheet.py
-from backend.db import get_connection, close_connection
+from backend.db import get_connection, close_connection, add_year_prefix, strip_year_prefix
 from backend.commonBackend import validate_group_id
 from typing import List, Dict, Optional
 
@@ -28,6 +28,7 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
     
     try:
         cursor = conn.cursor(dictionary=True)
+        db_group_id = add_year_prefix(group_id)
         
         # 1. Get project information
         cursor.execute("""
@@ -42,13 +43,16 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
                 p.evaluator2_name
             FROM projects p
             WHERE p.group_id = %s
-        """, (group_id,))
+        """, (db_group_id,))
         
         group_info = cursor.fetchone()
         
         if not group_info:
-            print(f"No project found for group_id: {group_id}")
+            print(f"No project found for group_id: {db_group_id}")
             return None
+        
+        # Strip prefix from returned group_id
+        group_info['group_id'] = strip_year_prefix(group_info['group_id'])
         
         # 2. Get all members
         cursor.execute("""
@@ -62,13 +66,17 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
             FROM members
             WHERE group_id = %s
             ORDER BY roll_no
-        """, (group_id,))
+        """, (db_group_id,))
         
         members = cursor.fetchall()
         
         if not members:
-            print(f"No members found for group_id: {group_id}")
+            print(f"No members found for group_id: {db_group_id}")
             return None
+        
+        # Strip prefix from returned roll numbers
+        for m in members:
+            m['roll_no'] = strip_year_prefix(m['roll_no'])
         
         # 3. Get marks for all reviews
         review_marks = {}
@@ -83,12 +91,12 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
                 FROM {table_name}
                 WHERE group_id = %s
                 ORDER BY roll_no
-            """, (group_id,))
+            """, (db_group_id,))
             
             marks_data = cursor.fetchall()
             
-            # Convert to dict for easy lookup
-            marks_dict = {row['roll_no']: row['total'] for row in marks_data}
+            # Convert to dict for easy lookup and strip roll_no prefixes
+            marks_dict = {strip_year_prefix(row['roll_no']): row['total'] for row in marks_data}
             review_marks[f'review{review_num}'] = marks_dict
         
         # 4. Get panel assignments for reviewer names
@@ -96,9 +104,9 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
             SELECT reviewer1, reviewer2, guide 
             FROM panel_assignments 
             WHERE group_id = %s
-        """, (group_id,))
+        """, (db_group_id,))
         panel_data = cursor.fetchone()
-
+ 
         if panel_data:
             group_info['reviewer1_name'] = panel_data.get('reviewer1')
             group_info['reviewer2_name'] = panel_data.get('reviewer2')
@@ -121,7 +129,7 @@ def get_final_summary_data(group_id: str) -> Optional[Dict]:
         import traceback
         traceback.print_exc()
         return None
-    
+        
     finally:
         close_connection(conn)
 
@@ -139,12 +147,13 @@ def get_overall_comments(group_id: str) -> Optional[str]:
     
     try:
         cursor = conn.cursor(dictionary=True)
+        db_group_id = add_year_prefix(group_id)
         
         cursor.execute("""
             SELECT overall_comments
             FROM final_sheet
             WHERE group_id = %s
-        """, (group_id,))
+        """, (db_group_id,))
         
         result = cursor.fetchone()
         
@@ -174,6 +183,7 @@ def save_overall_comments(group_id: str, comments: str) -> bool:
     
     try:
         cursor = conn.cursor()
+        db_group_id = add_year_prefix(group_id)
         
         # Limit comment length
         safe_comments = comments[:2000] if comments else None
@@ -186,7 +196,7 @@ def save_overall_comments(group_id: str, comments: str) -> bool:
                 updated_at = CURRENT_TIMESTAMP
         """
         
-        cursor.execute(query, (group_id, safe_comments))
+        cursor.execute(query, (db_group_id, safe_comments))
         conn.commit()
         
         print(f"Overall comments saved for group: {group_id}")

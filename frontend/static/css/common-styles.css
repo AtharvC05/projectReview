@@ -871,3 +871,48 @@ textarea:focus {
         color: white;
     }
 
+.year-badge-container {
+    text-align: center;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.year-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #4a5568 !important;
+    -webkit-text-fill-color: #4a5568 !important;
+    background: #eef2f7;
+    border: 1px solid #cbd5e0;
+    padding: 0.3rem 0.85rem;
+    border-radius: 20px;
+    margin: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    text-shadow: none !important;
+}
+
+/* Sub-label under the year badge (e.g. "Set by admin") */
+.year-badge-sub {
+    display: block;
+    font-size: 0.72rem;
+    color: #9ca3af;
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+}
+
+/* Admin-only: make badge clickable and show gear hint */
+a.year-badge {
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+a.year-badge:hover {
+    background: #e2e8f0;
+    border-color: #a0aec0;
+}

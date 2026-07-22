@@ -625,10 +625,10 @@ def initialize_default_users():
         cursor.execute("SELECT id FROM users WHERE username = 'admin'")
         if not cursor.fetchone():
             # Create admin user
-            admin_hash = hash_password('admin123')
+            admin_hash = hash_password('Admin@789')
             cursor.execute("""
                 INSERT INTO users (username, email, password_hash, role, email_verified) 
-                VALUES ('admin', 'admin@college.edu', %s, 'admin', TRUE)
+                VALUES ('admin', 'admin@i2it.edu', %s, 'admin', TRUE)
             """, (admin_hash,))
             logger.info("Created default admin user")
             conn.commit()

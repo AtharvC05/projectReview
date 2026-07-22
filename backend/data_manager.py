@@ -41,11 +41,18 @@ def require_admin():
 
 # Single file storage for admin (no user sessions)
 UPLOAD_FOLDER = 'admin_files'
-ADMIN_FILE_PATH = os.path.join(UPLOAD_FOLDER, 'current_project_data.xlsx')
-ADMIN_METADATA_PATH = os.path.join(UPLOAD_FOLDER, 'current_metadata.json')
+
+def get_admin_file_path():
+    year = db.get_academic_year()
+    return os.path.join(UPLOAD_FOLDER, f'project_data_{year}.xlsx')
+
+def get_admin_metadata_path():
+    year = db.get_academic_year()
+    return os.path.join(UPLOAD_FOLDER, f'metadata_{year}.json')
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
 
 def normalize_name(name: str) -> str:
     if not name:
@@ -226,6 +233,19 @@ def detect_and_normalize_sheets_robust(xls):
             detected_sheets['schedule'] = sheet_name
             logger.info(f"Detected Schedule sheet: {sheet_name}")
     
+    # Fallback logic for unassigned sheets if exact keywords were not matched
+    used_sheets = set(v for v in detected_sheets.values() if v is not None)
+    remaining_sheets = [s for s in sheet_names if s not in used_sheets]
+    
+    if detected_sheets['div_a'] is None and remaining_sheets:
+        detected_sheets['div_a'] = remaining_sheets.pop(0)
+    if detected_sheets['div_b'] is None and remaining_sheets:
+        detected_sheets['div_b'] = remaining_sheets.pop(0)
+    if detected_sheets['schedule'] is None and remaining_sheets:
+        detected_sheets['schedule'] = remaining_sheets.pop(0)
+    elif detected_sheets['schedule'] is None and sheet_names:
+        detected_sheets['schedule'] = sheet_names[-1]
+
     logger.info(f"Final detection results: {detected_sheets}")
     return detected_sheets
 
@@ -233,11 +253,11 @@ def save_admin_file(file_content, metadata):
     """Save Excel file and metadata for admin"""
     try:
         # Save Excel file
-        with open(ADMIN_FILE_PATH, 'wb') as f:
+        with open(get_admin_file_path(), 'wb') as f:
             f.write(file_content)
         
         # Save metadata
-        with open(ADMIN_METADATA_PATH, 'w') as f:
+        with open(get_admin_metadata_path(), 'w') as f:
             json.dump(metadata, f)
         
         return True
@@ -248,21 +268,24 @@ def save_admin_file(file_content, metadata):
 def load_admin_file():
     """Load Excel file and metadata for admin"""
     try:
-        if not os.path.exists(ADMIN_FILE_PATH) or not os.path.exists(ADMIN_METADATA_PATH):
+        file_path = get_admin_file_path()
+        metadata_path = get_admin_metadata_path()
+        if not os.path.exists(file_path) or not os.path.exists(metadata_path):
             return None, None
         
         # Load Excel file
-        with open(ADMIN_FILE_PATH, 'rb') as f:
+        with open(file_path, 'rb') as f:
             file_content = f.read()
         
         # Load metadata
-        with open(ADMIN_METADATA_PATH, 'r') as f:
+        with open(metadata_path, 'r') as f:
             metadata = json.load(f)
         
         return file_content, metadata
     except Exception as e:
         logger.error(f"Error loading admin file: {e}")
         return None, None
+
 
 def extract_all_group_ids(row_data):
     """Extract group IDs from row data"""
@@ -311,7 +334,8 @@ def assign_evaluators_from_panel(panel_professors, group_ids):
     cur = conn.cursor(dictionary=True)
     
     for i, group_id in enumerate(group_ids):
-        cur.execute("SELECT guide_name FROM projects WHERE group_id = %s", (group_id,))
+        db_group_id = db.add_year_prefix(group_id)
+        cur.execute("SELECT guide_name FROM projects WHERE group_id = %s", (db_group_id,))
         proj_row = cur.fetchone()
         guide_name = proj_row['guide_name'] if proj_row else ""
 
@@ -322,7 +346,7 @@ def assign_evaluators_from_panel(panel_professors, group_ids):
         eval2 = available_evaluators[1] if len(available_evaluators) > 1 else "Default Eval 2"
         
         assignments.append({
-            'group_id': group_id,
+            'group_id': db_group_id,
             'guide': guide_name or "",
             'evaluator1': eval1 or "",
             'evaluator2': eval2 or ""
@@ -388,12 +412,19 @@ def process_division_enhanced_with_normalization(df, division_name):
                         guide_name_val = guide_name_val.iloc[0] if not guide_name_val.empty else ''
                     guide_name = str(guide_name_val).strip()[:100] if pd.notnull(guide_name_val) else ""
                     
+                    db_group_id = db.add_year_prefix(group_id)
                     cur.execute(
-                        """INSERT IGNORE INTO projects 
+                        """INSERT INTO projects 
                            (group_id, division, project_domain, project_title, sponsor_company, guide_name, 
                             mentor_name, mentor_email, mentor_mobile, evaluator1_name, evaluator2_name) 
-                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                        (group_id, division_name, project_domain, project_title, sponsor_company, guide_name, "", "", "", "", "")
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                           ON DUPLICATE KEY UPDATE
+                           division = VALUES(division),
+                           project_domain = VALUES(project_domain),
+                           project_title = VALUES(project_title),
+                           sponsor_company = VALUES(sponsor_company),
+                           guide_name = VALUES(guide_name)""",
+                        (db_group_id, division_name, project_domain, project_title, sponsor_company, guide_name, "", "", "", "", "")
                     )
                     
                     if group_id not in processed_groups:
@@ -427,11 +458,19 @@ def process_division_enhanced_with_normalization(df, division_name):
                     contact_details = str(contact_val).strip() if pd.notnull(contact_val) else ""
                     
                     if roll_no and student_name:
+                        db_group_id = db.add_year_prefix(group_id)
+                        db_roll_no = db.add_year_prefix(roll_no)
                         cur.execute(
-                            "INSERT IGNORE INTO members (group_id, roll_no, student_name, contact_details) VALUES (%s, %s, %s, %s)",
-                            (group_id, roll_no, student_name, contact_details)
+                            """INSERT INTO members (group_id, roll_no, student_name, contact_details) 
+                               VALUES (%s, %s, %s, %s)
+                               ON DUPLICATE KEY UPDATE
+                               student_name = VALUES(student_name),
+                               contact_details = VALUES(contact_details),
+                               group_id = VALUES(group_id)""",
+                            (db_group_id, db_roll_no, student_name, contact_details)
                         )
                         processed_members += 1
+
                         
                 except Exception as member_error:
                     logger.error(f"Error inserting member for {group_id}: {str(member_error)}")
@@ -450,11 +489,9 @@ def process_all_data_with_normalization(div_a, div_b, sched):
     conn = db.get_connection()
     cur = conn.cursor(dictionary=True)
     
-    # Clear existing data
-    cur.execute("DELETE FROM panel_assignments")
-    cur.execute("DELETE FROM members")
-    cur.execute("DELETE FROM projects")
-    conn.commit()
+    # Process divisions with normalization without deleting existing records
+    # to preserve attendance, generated PDFs, review marks, and final summary comments
+    active_year = db.get_academic_year()
     
     # Process divisions with normalization
     div_a_groups, div_a_members = process_division_enhanced_with_normalization(div_a, 'A')
@@ -812,11 +849,12 @@ def update_cell_general():
 def update_admin_file_cell(sheet_name, row, col, new_value):
     """Update a cell in the stored admin Excel file"""
     try:
-        if not os.path.exists(ADMIN_FILE_PATH):
+        file_path = get_admin_file_path()
+        if not os.path.exists(file_path):
             return
         
         # Load workbook
-        wb = openpyxl.load_workbook(ADMIN_FILE_PATH)
+        wb = openpyxl.load_workbook(file_path)
         
         # Find the correct worksheet
         ws = None
@@ -830,7 +868,7 @@ def update_admin_file_cell(sheet_name, row, col, new_value):
             ws.cell(row=row + 1, column=col + 1, value=new_value)
             
             # Save the workbook
-            wb.save(ADMIN_FILE_PATH)
+            wb.save(file_path)
             
     except Exception as e:
         logger.warning(f"Could not update admin file: {e}")
@@ -872,6 +910,7 @@ def update_division_field(cursor, division, row, col, new_value):
         return
     
     try:
+        active_year = db.get_academic_year()
         if field_name == 'group_id':
             # Update projects table directly
             cursor.execute("""
@@ -879,27 +918,36 @@ def update_division_field(cursor, division, row, col, new_value):
                 WHERE division = %s AND group_id = (
                     SELECT old_group_id FROM (
                         SELECT group_id as old_group_id FROM projects 
-                        WHERE division = %s LIMIT 1 OFFSET %s
+                        WHERE division = %s AND group_id LIKE %s LIMIT 1 OFFSET %s
                     ) as temp
                 )
-            """, (new_value, division, division, row - 1))
-        elif field_name in ['roll_no', 'student_name', 'contact_details']:
+            """, (db.add_year_prefix(new_value), division, division, f"{active_year}_%", row - 1))
+        elif field_name == 'roll_no':
+            # Update members table with prefixed roll number
+            cursor.execute("""
+                UPDATE members m
+                JOIN projects p ON m.group_id = p.group_id
+                SET m.roll_no = %s
+                WHERE p.division = %s AND p.group_id LIKE %s
+                LIMIT 1 OFFSET %s
+            """, (db.add_year_prefix(new_value), division, f"{active_year}_%", row - 1))
+        elif field_name in ['student_name', 'contact_details']:
             # Update members table
             cursor.execute("""
                 UPDATE members m
                 JOIN projects p ON m.group_id = p.group_id
                 SET m.{} = %s
-                WHERE p.division = %s
+                WHERE p.division = %s AND p.group_id LIKE %s
                 LIMIT 1 OFFSET %s
-            """.format(field_name), (new_value, division, row - 1))
+            """.format(field_name), (new_value, division, f"{active_year}_%", row - 1))
         elif field_name in ['project_domain', 'project_title', 'sponsor_company', 'guide_name']:
             # Update projects table
             cursor.execute("""
                 UPDATE projects 
                 SET {} = %s 
-                WHERE division = %s 
+                WHERE division = %s AND group_id LIKE %s
                 LIMIT 1 OFFSET %s
-            """.format(field_name), (new_value, division, row - 1))
+            """.format(field_name), (new_value, division, f"{active_year}_%", row - 1))
             
     except Exception as e:
         logger.warning(f"Could not update {field_name} in division {division}: {e}")
@@ -922,23 +970,26 @@ def update_schedule_field(cursor, row, col, new_value):
         return
         
     try:
+        active_year = db.get_academic_year()
         if field_name == 'track':
             cursor.execute("""
                 UPDATE panel_assignments 
                 SET track = %s 
-                WHERE track = (
+                WHERE group_id LIKE %s AND track = (
                     SELECT old_track FROM (
                         SELECT track as old_track FROM panel_assignments 
+                        WHERE group_id LIKE %s
                         ORDER BY track LIMIT 1 OFFSET %s
                     ) as temp
                 )
-            """, (new_value, row - 1))
+            """, (new_value, f"{active_year}_%", f"{active_year}_%", row - 1))
         elif field_name in ['panel_professors', 'location']:
             cursor.execute("""
                 UPDATE panel_assignments 
                 SET {} = %s 
+                WHERE group_id LIKE %s
                 ORDER BY track LIMIT 1 OFFSET %s
-            """.format(field_name), (new_value, row - 1))
+            """.format(field_name), (new_value, f"{active_year}_%", row - 1))
             
     except Exception as e:
         logger.warning(f"Could not update {field_name} in schedule: {e}")
@@ -947,12 +998,13 @@ def update_schedule_field(cursor, row, col, new_value):
 def export_excel():
     """Export current admin file as Excel"""
     try:
-        if not os.path.exists(ADMIN_FILE_PATH):
+        file_path = get_admin_file_path()
+        if not os.path.exists(file_path):
             return jsonify({'success': False, 'error': 'No file to export'}), 400
         
         # Return the updated admin file
         return send_file(
-            ADMIN_FILE_PATH,
+            file_path,
             as_attachment=True,
             download_name=f'updated_project_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -966,11 +1018,12 @@ def export_excel():
 def export_formatted_excel():
     """Export Excel file with original formatting and merged cells preserved"""
     try:
-        if not os.path.exists(ADMIN_FILE_PATH):
+        file_path = get_admin_file_path()
+        if not os.path.exists(file_path):
             return jsonify({'success': False, 'error': 'No stored file found'}), 404
         
         # Load the original workbook with all formatting preserved
-        wb = openpyxl.load_workbook(ADMIN_FILE_PATH)
+        wb = openpyxl.load_workbook(file_path)
         
         # Get database data for updates
         conn = db.get_connection()
@@ -1215,8 +1268,9 @@ def update_cell_preserve_format(ws, row, col, value):
 def get_file_info():
     """Get information about stored admin file"""
     try:
-        if os.path.exists(ADMIN_METADATA_PATH):
-            with open(ADMIN_METADATA_PATH, 'r') as f:
+        metadata_path = get_admin_metadata_path()
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
                 metadata = json.load(f)
             return jsonify({'success': True, 'metadata': metadata})
         else:

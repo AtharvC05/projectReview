@@ -46,6 +46,33 @@
             letter-spacing: 1px;
             box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
         }
+        .academic-year-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .year-select {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            background: white;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+        .year-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
         .controls {
             display: flex;
             gap: 12px;
@@ -402,7 +429,20 @@
         <div class="header">
             <div>
                 <h1>Admin Project Data Manager</h1>
-                <div class="admin-badge">Admin Access</div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 8px;">
+                    <div class="admin-badge">Admin Access</div>
+                    <div class="academic-year-card">
+                        <label for="year-selector" style="font-weight: bold; color: #2c3e50; font-size: 13px;">Academic Year:</label>
+                        <select id="year-selector" class="year-select" onchange="changeAcademicYear(this.value)">
+                            <option value="2024-25">2024-25</option>
+                            <option value="2025-26">2025-26</option>
+                            <option value="2026-27">2026-27</option>
+                            <option value="2027-28">2027-28</option>
+                            <option value="2028-29">2028-29</option>
+                            <option value="custom">Custom...</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="controls">
                 <input type="file" id="excel-upload" accept=".xlsx,.xls" style="display: none;">
@@ -591,6 +631,9 @@
                         document.getElementById('load-stored-btn').disabled = false;
                         this.updateFileStatus('Previous file available', 'info');
                         document.getElementById('file-info').textContent = `Last uploaded: ${result.upload_date}`;
+                        
+                        // Automatically load the stored file to show live data
+                        await this.loadStoredFile();
                     }
                 } catch (error) {
                     console.log('Checking for stored file...');
@@ -1132,8 +1175,73 @@
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
+            const currentYear = "{{ academic_year }}";
+            const selector = document.getElementById('year-selector');
+            if (selector) {
+                let exists = false;
+                for (let i = 0; i < selector.options.length; i++) {
+                    if (selector.options[i].value === currentYear) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    const newOption = document.createElement('option');
+                    newOption.value = currentYear;
+                    newOption.textContent = currentYear;
+                    selector.insertBefore(newOption, selector.lastElementChild);
+                }
+                selector.value = currentYear;
+            }
             window.adminDataManager = new AdminDataManager();
         });
+
+        async function changeAcademicYear(value) {
+            let selectedYear = value;
+            if (value === 'custom') {
+                const customYear = prompt('Enter academic year (format YYYY-YY, e.g., 2025-26):');
+                if (!customYear) {
+                    document.getElementById('year-selector').value = "{{ academic_year }}";
+                    return;
+                }
+                if (!/^\d{4}-\d{2}$/.test(customYear)) {
+                    alert('Invalid format. Please use YYYY-YY (e.g. 2025-26)');
+                    document.getElementById('year-selector').value = "{{ academic_year }}";
+                    return;
+                }
+                
+                const selector = document.getElementById('year-selector');
+                const newOption = document.createElement('option');
+                newOption.value = customYear;
+                newOption.textContent = customYear;
+                selector.insertBefore(newOption, selector.lastElementChild);
+                selector.value = customYear;
+                selectedYear = customYear;
+            }
+            
+            try {
+                if (window.adminDataManager) {
+                    window.adminDataManager.showLoading('Switching academic year...');
+                }
+                const response = await fetch('/api/academic-year', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ academic_year: selectedYear })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to change academic year: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error updating academic year: ' + error.message);
+            } finally {
+                if (window.adminDataManager) {
+                    window.adminDataManager.hideLoading();
+                }
+            }
+        }
     </script>
 
     <!-- Include SheetJS for Excel parsing -->
