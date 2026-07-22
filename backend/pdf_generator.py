@@ -167,32 +167,34 @@ class GenericReviewPDFGenerator:
         
         self.elements.append(Spacer(1, 0.15*inch))
     
-    def add_project_info(self, group_data, submission_date):
+    def add_project_info(self, group_data, submission_date, guide_name=None):
         """Add group and project information"""
         project_title = str(group_data.get('project_title', '') or '')
         project_domain = str(group_data.get('project_domain', '') or '')
         sponsor_company = str(group_data.get('sponsor_company', '') or '')
+        if not guide_name:
+            guide_name = str(group_data.get('guide_name', '') or '')
 
         title_para = Paragraph(project_title, self.styles['TableTextSmall'])
         domain_para = Paragraph(project_domain, self.styles['TableTextSmall'])
         sponsor_para = Paragraph(sponsor_company, self.styles['TableTextSmall'])
+        guide_para = Paragraph(guide_name, self.styles['TableTextSmall'])
 
         info_data = [
-            ['Group ID :', group_data.get('group_id', ''), 'DATE :', str(submission_date)],
-            ['Project Title :', title_para, '', ''],
-            ['Project Domain :', domain_para, '', ''],
-            ['Sponsor Company :', sponsor_para, '', '']
+            ['Group ID', group_data.get('group_id', ''), 'DATE', str(submission_date)],
+            ['Project Domain', domain_para, 'Guide Name', guide_para],
+            ['Project Title', title_para, '', ''],
+            ['Sponsor Company', sponsor_para, '', '']
         ]
         
-        col_widths = [1.25*inch, 2.45*inch, 0.7*inch, 2.1*inch]
+        col_widths = [1.35*inch, 2.15*inch, 1.0*inch, 2.0*inch]
         info_table = Table(info_data, colWidths=col_widths)
         info_table.setStyle(TableStyle([
             ('FONT', (0, 0), (-1, -1), 'Helvetica', 9),
             ('FONT', (0, 0), (0, -1), 'Helvetica-Bold', 9),
-            ('FONT', (2, 0), (2, 0), 'Helvetica-Bold', 9),
+            ('FONT', (2, 0), (2, 1), 'Helvetica-Bold', 9),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('SPAN', (1, 1), (3, 1)),
             ('SPAN', (1, 2), (3, 2)),
             ('SPAN', (1, 3), (3, 3)),
             ('LEFTPADDING', (0, 0), (-1, -1), 5),
@@ -204,58 +206,38 @@ class GenericReviewPDFGenerator:
         self.elements.append(info_table)
         self.elements.append(Spacer(1, 0.12*inch))
     
-    def add_members_table(self, members, guide_info):
-        """Add team members table with guide details"""
-        num_members = len(members)
-        
-        guide_name = guide_info.get('guide_name', '')
-        
+    def add_members_table(self, members, guide_info=None):
+        """Add team members table"""
         header = [
             'Sr.No.', 
             'Roll No.', 
-            'Student Name', 
-            Paragraph('<b>Internal Guide Details</b>', self.styles['TableTextSmall'])
+            'Student Name'
         ]
         data = [header]
         
-        guide_content = f"Guide Name : {guide_name}"
-        guide_para = Paragraph(guide_content, self.styles['TableTextSmall'])
-        
         for idx, member in enumerate(members, 1):
-            if idx == 1:
-                data.append([
-                    str(idx),
-                    member['roll_no'],
-                    member['student_name'],
-                    guide_para
-                ])
-            else:
-                data.append([
-                    str(idx),
-                    member['roll_no'],
-                    member['student_name'],
-                    ''
-                ])
+            data.append([
+                str(idx),
+                member.get('roll_no', ''),
+                member.get('student_name', '')
+            ])
         
-        col_widths = [0.6*inch, 1.1*inch, 2.6*inch, 2.2*inch]
+        col_widths = [0.8*inch, 1.7*inch, 4.0*inch]
         members_table = Table(data, colWidths=col_widths)
         
         style_commands = [
             ('FONT', (0, 0), (-1, 0), 'Helvetica-Bold', 9),
-            ('FONT', (0, 1), (2, -1), 'Helvetica', 9),
-            ('VALIGN', (0, 0), (2, -1), 'MIDDLE'),
-            ('VALIGN', (3, 1), (3, -1), 'TOP'),
-            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
-            ('ALIGN', (1, 0), (1, -1), 'CENTER'),
+            ('FONT', (0, 1), (-1, -1), 'Helvetica', 9),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (1, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),
+            ('LEFTPADDING', (2, 0), (2, -1), 60),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
-            ('LEFTPADDING', (0, 0), (-1, -1), 4),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (1, -1), 5),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 5),
             ('TOPPADDING', (0, 0), (-1, -1), 4),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ]
-        
-        if num_members >= 1:
-            style_commands.append(('SPAN', (3, 1), (3, num_members)))
         
         members_table.setStyle(TableStyle(style_commands))
         self.elements.append(members_table)
@@ -734,10 +716,8 @@ def generate_review_pdf(review_number, group_id, output_filename=None):
         
         # Page 1
         pdf.add_header(academic_year)
-        pdf.add_project_info(project_data, formatted_date)
-        pdf.add_members_table(members, {
-            'guide_name': project_data.get('guide_name', 'N/A')
-        })
+        pdf.add_project_info(project_data, formatted_date, final_guide_name)
+        pdf.add_members_table(members)
         pdf.add_checklist_section(section_title, ordered_questions, responses_data)
         
         # Page 2
