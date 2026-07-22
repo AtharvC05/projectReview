@@ -13,7 +13,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 from reportlab.platypus.tableofcontents import TableOfContents
 import backend.sheet1 as sheet1  # For database connection
-from backend.db import get_connection, close_connection
+from backend.db import get_connection, close_connection, get_academic_year, add_year_prefix, strip_year_prefix
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ def get_schedule_data():
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
+        active_year = get_academic_year()
         
         # USING THE EXACT SAME WORKING DATABASE QUERY LOGIC
         cursor.execute("""
@@ -59,7 +61,7 @@ def get_schedule_data():
                     WHEN p.evaluator1_name IS NOT NULL AND TRIM(p.evaluator1_name) != '' 
                      AND p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != '' THEN 'COMPLETE'
                     WHEN p.evaluator1_name IS NOT NULL AND TRIM(p.evaluator1_name) != '' 
-                      OR p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != '' THEN 'PARTIAL'
+                       OR p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != '' THEN 'PARTIAL'
                     ELSE 'MISSING'
                 END as evaluator_status,
                 -- Additional fields for completeness
@@ -67,6 +69,7 @@ def get_schedule_data():
                 p.sponsor_company
             FROM projects p
             LEFT JOIN panel_assignments pa ON p.group_id = pa.group_id
+            WHERE p.group_id LIKE %s
             ORDER BY
                 CASE
                     WHEN pa.track IS NULL THEN 999
@@ -75,9 +78,13 @@ def get_schedule_data():
                 END,
                 p.division,
                 p.group_id
-        """)
+        """, (f"{active_year}_%",))
         
         schedule_data = cursor.fetchall()
+        
+        # Strip year prefixes
+        for row in schedule_data:
+            row['group_id'] = strip_year_prefix(row['group_id'])
         
         # Log sample for debugging using same format as working database queries
         if schedule_data:
@@ -93,29 +100,30 @@ def get_schedule_data():
                 COUNT(CASE WHEN (p.evaluator1_name IS NOT NULL AND TRIM(p.evaluator1_name) != '') 
                            AND (p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != '') THEN 1 END) as with_both_evals
             FROM projects p
-        """)
+            WHERE p.group_id LIKE %s
+        """, (f"{active_year}_%",))
         eval_stats = cursor.fetchone()
         
         logger.info(f"Evaluator Statistics - Total: {eval_stats['total_projects']}, With Eval1: {eval_stats['with_eval1']}, With Eval2: {eval_stats['with_eval2']}, With Both: {eval_stats['with_both_evals']}")
         logger.info(f"Fetched {len(schedule_data)} project records")
 
         # Get comprehensive statistics using working database queries
-        cursor.execute("SELECT COUNT(*) as total_groups FROM projects")
+        cursor.execute("SELECT COUNT(*) as total_groups FROM projects WHERE group_id LIKE %s", (f"{active_year}_%",))
         total_groups = cursor.fetchone()['total_groups']
 
         cursor.execute("""
             SELECT COUNT(DISTINCT CAST(track AS UNSIGNED)) as total_tracks
             FROM panel_assignments
-            WHERE track IS NOT NULL AND TRIM(track) != '' AND track REGEXP '^[0-9]+$'
-        """)
+            WHERE group_id LIKE %s AND track IS NOT NULL AND TRIM(track) != '' AND track REGEXP '^[0-9]+$'
+        """, (f"{active_year}_%",))
         total_tracks = cursor.fetchone()['total_tracks'] or 0
 
         cursor.execute("""
             SELECT COUNT(DISTINCT p.group_id) as scheduled_groups
             FROM projects p
             INNER JOIN panel_assignments pa ON p.group_id = pa.group_id
-            WHERE pa.track IS NOT NULL AND TRIM(pa.track) != ''
-        """)
+            WHERE p.group_id LIKE %s AND pa.track IS NOT NULL AND TRIM(pa.track) != ''
+        """, (f"{active_year}_%",))
         scheduled_groups = cursor.fetchone()['scheduled_groups'] or 0
 
         cursor.close()
@@ -141,6 +149,7 @@ def get_schedule_data():
             }
         })
 
+
     except Exception as e:
         logger.error(f"Error fetching schedule data: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -151,15 +160,16 @@ def generate_smart_schedule():
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
+        active_year = get_academic_year()
         
         # Get all projects without panel assignments using working database logic
         cursor.execute("""
             SELECT p.group_id, p.division, p.project_title, p.guide_name, p.evaluator1_name, p.evaluator2_name
             FROM projects p
             LEFT JOIN panel_assignments pa ON p.group_id = pa.group_id
-            WHERE pa.group_id IS NULL OR pa.track IS NULL OR TRIM(pa.track) = ''
+            WHERE p.group_id LIKE %s AND (pa.group_id IS NULL OR pa.track IS NULL OR TRIM(pa.track) = '')
             ORDER BY p.division, p.group_id
-        """)
+        """, (f"{active_year}_%",))
         unscheduled_projects = cursor.fetchall()
 
         logger.info(f"Found {len(unscheduled_projects)} unscheduled projects")
@@ -231,6 +241,7 @@ def debug_schedule_data():
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
+        active_year = get_academic_year()
 
         # Check evaluator data using working database query format
         cursor.execute("""
@@ -241,14 +252,19 @@ def debug_schedule_data():
                 LENGTH(COALESCE(evaluator1_name, '')) as eval1_length,
                 LENGTH(COALESCE(evaluator2_name, '')) as eval2_length
             FROM projects
+            WHERE group_id LIKE %s
             ORDER BY division, group_id
             LIMIT 10
-        """)
+        """, (f"{active_year}_%",))
         evaluator_sample = cursor.fetchall()
+        for r in evaluator_sample:
+            r['group_id'] = strip_year_prefix(r['group_id'])
 
         # Check panel assignments
-        cursor.execute("SELECT group_id, track, reviewer1, reviewer2 FROM panel_assignments ORDER BY track, group_id LIMIT 5")
+        cursor.execute("SELECT group_id, track, reviewer1, reviewer2 FROM panel_assignments WHERE group_id LIKE %s ORDER BY track, group_id LIMIT 5", (f"{active_year}_%",))
         panel_sample = cursor.fetchall()
+        for r in panel_sample:
+            r['group_id'] = strip_year_prefix(r['group_id'])
 
         # Check combined data using working database logic
         cursor.execute("""
@@ -265,10 +281,13 @@ def debug_schedule_data():
                 CASE WHEN p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != '' THEN 'PROJECTS_HAS_EVAL2' ELSE 'PROJECTS_NO_EVAL2' END as eval2_status
             FROM projects p
             LEFT JOIN panel_assignments pa ON p.group_id = pa.group_id
+            WHERE p.group_id LIKE %s
             ORDER BY CAST(COALESCE(pa.track, '999') AS UNSIGNED), p.group_id
             LIMIT 15
-        """)
+        """, (f"{active_year}_%",))
         combined_sample = cursor.fetchall()
+        for r in combined_sample:
+            r['group_id'] = strip_year_prefix(r['group_id'])
         
         # Get counts by division using working database logic
         cursor.execute("""
@@ -280,8 +299,9 @@ def debug_schedule_data():
                 COUNT(CASE WHEN (evaluator1_name IS NOT NULL AND TRIM(evaluator1_name) != '') 
                            AND (evaluator2_name IS NOT NULL AND TRIM(evaluator2_name) != '') THEN 1 END) as with_both
             FROM projects
+            WHERE group_id LIKE %s
             GROUP BY division
-        """)
+        """, (f"{active_year}_%",))
         division_stats = cursor.fetchall()
 
         cursor.close()
@@ -309,6 +329,7 @@ def sync_evaluator_data():
     try:
         conn = get_connection()
         cursor = conn.cursor()
+        active_year = get_academic_year()
         
         # Update panel_assignments using working database logic
         cursor.execute("""
@@ -317,9 +338,10 @@ def sync_evaluator_data():
             SET 
                 pa.reviewer1 = p.evaluator1_name,
                 pa.reviewer2 = p.evaluator2_name
-            WHERE p.evaluator1_name IS NOT NULL AND TRIM(p.evaluator1_name) != ''
-               AND p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != ''
-        """)
+            WHERE p.group_id LIKE %s
+              AND p.evaluator1_name IS NOT NULL AND TRIM(p.evaluator1_name) != ''
+              AND p.evaluator2_name IS NOT NULL AND TRIM(p.evaluator2_name) != ''
+        """, (f"{active_year}_%",))
         
         rows_updated = cursor.rowcount
         conn.commit()
@@ -331,6 +353,7 @@ def sync_evaluator_data():
             'message': f'Successfully synced evaluator data for {rows_updated} groups using working database logic',
             'rows_updated': rows_updated
         })
+
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -342,6 +365,7 @@ def generate_schedule_pdf():
         # Get schedule data using EXACT working database query
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
+        active_year = get_academic_year()
         cursor.execute("""
             SELECT
                 COALESCE(pa.track, 'Unassigned') as track,
@@ -355,6 +379,7 @@ def generate_schedule_pdf():
                 COALESCE(p.evaluator2_name, 'TBD') as evaluator2_name
             FROM projects p
             LEFT JOIN panel_assignments pa ON p.group_id = pa.group_id
+            WHERE p.group_id LIKE %s
             ORDER BY
                 CASE
                     WHEN pa.track IS NULL OR TRIM(pa.track) = '' THEN 999
@@ -362,7 +387,7 @@ def generate_schedule_pdf():
                 END,
                 p.division,
                 p.group_id
-        """)
+        """, (f"{active_year}_%",))
         schedule_data = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -497,7 +522,7 @@ def generate_schedule_pdf():
             # Data rows with Paragraph objects for automatic wrapping
             for item in batch_data:
                 # Create wrapped paragraphs for each cell - NO CHARACTER LIMITS
-                group_id_para = create_wrapped_paragraph(item['group_id'])
+                group_id_para = create_wrapped_paragraph(strip_year_prefix(item['group_id']))
                 division_para = create_wrapped_paragraph(item['division'] or 'N/A')
                 
                 # Project title with enhanced wrapping (most important for dynamic height)
@@ -702,6 +727,7 @@ def refresh_schedule_data():
     try:
         conn = get_connection()
         cursor = conn.cursor(dictionary=True)
+        active_year = get_academic_year()
         
         # Check if evaluators exist using working database logic
         cursor.execute("""
@@ -712,18 +738,22 @@ def refresh_schedule_data():
                 COUNT(CASE WHEN (evaluator1_name IS NOT NULL AND TRIM(evaluator1_name) != '') 
                            AND (evaluator2_name IS NOT NULL AND TRIM(evaluator2_name) != '') THEN 1 END) as with_both_evals
             FROM projects
-        """)
+            WHERE group_id LIKE %s
+        """, (f"{active_year}_%",))
         eval_check = cursor.fetchone()
         
         # Get sample using working database logic
         cursor.execute("""
             SELECT group_id, division, evaluator1_name, evaluator2_name
             FROM projects
-            WHERE evaluator1_name IS NOT NULL AND TRIM(evaluator1_name) != ''
+            WHERE group_id LIKE %s
+              AND evaluator1_name IS NOT NULL AND TRIM(evaluator1_name) != ''
               AND evaluator2_name IS NOT NULL AND TRIM(evaluator2_name) != ''
             LIMIT 5
-        """)
+        """, (f"{active_year}_%",))
         sample_evals = cursor.fetchall()
+        for r in sample_evals:
+            r['group_id'] = strip_year_prefix(r['group_id'])
         
         cursor.close()
         conn.close()

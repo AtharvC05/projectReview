@@ -14,6 +14,16 @@
         <div class="header-left"></div>
         <div class="header-center">
             <h1>Project Review - II</h1>
+            <div class="year-badge-container">
+                {% if is_admin %}
+                <a href="/data-manager" class="year-badge" title="Change academic year in Data Manager">
+                    🎓 {{ academic_year }} &nbsp;⚙️
+                </a>
+                {% else %}
+                <span class="year-badge">🔒 Academic Year: {{ academic_year }}</span>
+                <span class="year-badge-sub">Set by admin</span>
+                {% endif %}
+            </div>
         </div>
         <div class="menu-container">
             <button class="menu-toggle" onclick="toggleMenu()">

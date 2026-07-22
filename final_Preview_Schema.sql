@@ -4,9 +4,6 @@ CREATE TABLE projects (
     group_id         VARCHAR(50) PRIMARY KEY,          -- unique group ID
     project_title    TEXT NOT NULL,                    -- project title
     guide_name       TEXT,                              -- faculty guide
-    mentor_name      TEXT,                              -- external mentor
-    mentor_email     VARCHAR(100),
-    mentor_mobile    VARCHAR(20),
     evaluator1_name  TEXT,
     evaluator2_name  TEXT,
     division         VARCHAR(10),                      -- e.g. A, B, C
@@ -19,7 +16,6 @@ CREATE TABLE members (
     group_id            VARCHAR(50) NOT NULL,           -- links to projects table
     roll_no             VARCHAR(50) NOT NULL,           -- student roll number
     student_name        TEXT NOT NULL,
-    contact_details     VARCHAR(100),
     review1_attendance  BOOLEAN DEFAULT FALSE,
     review2_attendance  BOOLEAN DEFAULT FALSE,
     review3_attendance  BOOLEAN DEFAULT FALSE,
@@ -140,8 +136,8 @@ CREATE TABLE IF NOT EXISTS review2_marks (
     roll_no VARCHAR(50) NOT NULL,
 
     arch_literature TEXT COMMENT '1. System Architecture & Literature Survey (Review-I)',
-    project_design FLOAT DEFAULT 0 COMMENT '2. Project Design (9M)',
-    methodology_algorithms FLOAT DEFAULT 0 COMMENT '3. Methodology/Algorithms and Project Features (9M)',
+    project_design FLOAT DEFAULT 0 COMMENT '2. Project Design (5M)',
+    methodology_algorithms FLOAT DEFAULT 0 COMMENT '3. Methodology/Algorithms and Project Features (5M)',
     project_planning FLOAT DEFAULT 0 COMMENT '4. Project Planning (2M)',
     implementation_details FLOAT DEFAULT 0 COMMENT '5. Basic details of Implementation (5M)',
     presentation_skills FLOAT DEFAULT 0 COMMENT '6. Presentation Skills (4M)',
@@ -230,8 +226,8 @@ CREATE TABLE IF NOT EXISTS review2_performance_criteria (
 -- 7. Insert performance criteria for Review 2
 INSERT INTO review2_performance_criteria (criteria_id, criteria_text, max_marks, display_order) VALUES
 ('arch_literature', 'System Architecture & Literature Survey (Review-I)', 0, 1),
-('project_design', 'Project Design', 9, 2),
-('methodology_algorithms', 'Methodology/Algorithms and Project Features', 9, 3),
+('project_design', 'Project Design', 5, 2),
+('methodology_algorithms', 'Methodology/Algorithms and Project Features', 5, 3),
 ('project_planning', 'Project Planning', 2, 4),
 ('implementation_details', 'Basic details of Implementation', 5, 5),
 ('presentation_skills', 'Presentation Skills', 4, 6),
@@ -245,8 +241,8 @@ CREATE TABLE IF NOT EXISTS review0_marks (
     roll_no VARCHAR(50) NOT NULL,
 
     arch_literature TEXT COMMENT '1. System Architecture & Literature Survey (Review-I)',
-    project_design FLOAT DEFAULT 0 COMMENT '2. Project Design (9M)',
-    methodology_algorithms FLOAT DEFAULT 0 COMMENT '3. Methodology/Algorithms and Project Features (9M)',
+    project_design FLOAT DEFAULT 0 COMMENT '2. Project Design (5M)',
+    methodology_algorithms FLOAT DEFAULT 0 COMMENT '3. Methodology/Algorithms and Project Features (5M)',
     project_planning FLOAT DEFAULT 0 COMMENT '4. Project Planning (2M)',
     implementation_details FLOAT DEFAULT 0 COMMENT '5. Basic details of Implementation (5M)',
     presentation_skills FLOAT DEFAULT 0 COMMENT '6. Presentation Skills (4M)',
@@ -335,8 +331,8 @@ CREATE TABLE IF NOT EXISTS review0_performance_criteria (
 -- 7. Insert performance criteria for Review 2
 INSERT INTO review0_performance_criteria (criteria_id, criteria_text, max_marks, display_order) VALUES
 ('arch_literature', 'System Architecture & Literature Survey (Review-I)', 0, 1),
-('project_design', 'Project Design', 9, 2),
-('methodology_algorithms', 'Methodology/Algorithms and Project Features', 9, 3),
+('project_design', 'Project Design', 5, 2),
+('methodology_algorithms', 'Methodology/Algorithms and Project Features', 5, 3),
 ('project_planning', 'Project Planning', 2, 4),
 ('implementation_details', 'Basic details of Implementation', 5, 5),
 ('presentation_skills', 'Presentation Skills', 4, 6),
@@ -449,7 +445,7 @@ INSERT INTO review4_performance_criteria (criteria_id, criteria_text, max_marks,
 ('presentation_skills', '5. Presentation skills (3M)', 3, 5),
 ('question_answer', '6. Question and Answer (2M)', 2, 6);
 
--- 2. Marks Table (with triggers for auto-calculation)
+-- 2. Marks Table (with triggers for auto-calculation) 
 CREATE TABLE review4_marks (
     id INT AUTO_INCREMENT PRIMARY KEY,
     group_id VARCHAR(20) NOT NULL,
@@ -639,6 +635,20 @@ CREATE TABLE IF NOT EXISTS pdf_generation_logs (
     INDEX idx_generated_at (generated_at),
     FOREIGN KEY (group_id) REFERENCES projects(group_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- System settings table (persists server-wide configuration across restarts)
+CREATE TABLE IF NOT EXISTS system_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Seed the default active academic year (adjust as needed)
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES ('active_academic_year', '2025-26')
+ON DUPLICATE KEY UPDATE setting_value = setting_value;
+
 
 
 -- Add this to your database schema

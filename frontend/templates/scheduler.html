@@ -217,6 +217,26 @@
             .stats-grid {
                 grid-template-columns: 1fr;
             }
+        .year-badge-container {
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        .year-badge {
+            display: inline-block;
+            vertical-align: middle;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #4a5568 !important;
+            background: #eef2f7;
+            border: 1px solid #cbd5e0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            margin: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-shadow: none !important;
         }
     </style>
 </head>
@@ -224,6 +244,9 @@
     <div class="container">
         <div class="header">
             <h1>🗓️ Smart Project Scheduler</h1>
+            <div class="year-badge-container">
+                <span class="year-badge">Academic Year: {{ academic_year }}</span>
+            </div>
             <p>Intelligent batch management for project reviews with automated assignments</p>
         </div>
         

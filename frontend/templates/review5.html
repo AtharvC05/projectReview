@@ -15,6 +15,16 @@
         <div class="header-left"></div>
         <div class="header-center">
             <h1>Final Review Summary</h1>
+            <div class="year-badge-container">
+                {% if is_admin %}
+                <a href="/data-manager" class="year-badge" title="Change academic year in Data Manager">
+                    🎓 {{ academic_year }} &nbsp;⚙️
+                </a>
+                {% else %}
+                <span class="year-badge">🔒 Academic Year: {{ academic_year }}</span>
+                <span class="year-badge-sub">Set by admin</span>
+                {% endif %}
+            </div>
         </div>
         <div class="menu-container">
             <button class="menu-toggle" onclick="toggleMenu()">
@@ -24,12 +34,18 @@
             </button>
 
             <div class="menu-dropdown" id="menuDropdown">
-                <!-- Database Management -->
+                <!-- Admin-only items -->
+                {% if is_admin %}
                 <a href="/data-manager" class="menu-item">
                     <span class="icon">🗄️</span>
                     Database Manager
                 </a>
-                <a href="/scheduler" class="menu-item ">
+                <a href="/pdf-viewer" class="menu-item">
+                    <span class="icon">📄</span>
+                    Generated PDFs
+                </a>
+                {% endif %}
+                <a href="/scheduler" class="menu-item">
                     <span class="icon">📅</span>
                     Review Scheduler
                 </a>
@@ -41,7 +57,7 @@
 
                 <!-- Review Pages -->
                 <a href="/review1" class="menu-item">
-                    <span class="icon">📝</span>
+                    <span class="icon">📋</span>
                     Review I - Scope
                 </a>
 
@@ -49,7 +65,10 @@
                     <span class="icon">🎨</span>
                     Review II - Design
                 </a>
-
+                <a href="/review0" class="menu-item">
+                    <span class="icon">📌</span>
+                    MOCK Review
+                </a>
                 <a href="/review3" class="menu-item">
                     <span class="icon">⚙️</span>
                     Review III - Implementation
@@ -67,10 +86,9 @@
 
                 <div class="menu-divider"></div>
 
-                <!-- Additional Options -->
-                <a href="/" class="menu-item">
-                    <span class="icon">🏠</span>
-                    Home
+                <a href="/auth/logout" class="menu-item">
+                    <span class="icon">🚪</span>
+                    Logout ➜]
                 </a>
             </div>
         </div>

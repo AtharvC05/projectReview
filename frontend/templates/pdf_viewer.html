@@ -227,11 +227,15 @@
         .pdf-meta {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 8px;
             margin-bottom: 15px;
             padding: 12px;
             background: #f9fafb;
             border-radius: 8px;
+        }
+
+        .pdf-meta .meta-item:first-child {
+            grid-column: 1 / -1; /* Academic year spans full width */
         }
 
         .meta-item {
@@ -413,6 +417,27 @@
                 grid-template-columns: 1fr;
             }
         }
+        .year-badge-container {
+            text-align: center;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        .year-badge {
+            display: inline-block;
+            vertical-align: middle;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #4a5568 !important;
+            background: #eef2f7;
+            border: 1px solid #cbd5e0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            margin: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-shadow: none !important;
+        }
     </style>
 </head>
 
@@ -420,7 +445,11 @@
     <div class="container">
         <div class="header">
             <h1>📄 PDF Report Generator</h1>
-            <p>Generate review reports on-demand without server storage</p>
+            <div class="year-badge-container">
+                <span class="year-badge">🎓 Academic Year: {{ academic_year }}</span>
+                <span style="font-size:0.78rem;color:#9ca3af;display:block;margin-top:4px;">Set by admin · Applied to all generated PDFs</span>
+            </div>
+            <p>Generate review reports on-demand</p>
         </div>
 
         <div class="stats-grid" id="stats-grid">
@@ -472,6 +501,9 @@
                 <button class="btn btn-secondary" onclick="pdfManager.clearFilters()">
                     Clear Filters
                 </button>
+                <a href="/review1" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                    🏠 Return to Reviews
+                </a>
             </div>
 
             <div id="pdf-content" class="loading">
@@ -616,18 +648,25 @@
                             </div>
                             <div class="pdf-meta">
                                 <div class="meta-item">
+                                    <span class="meta-label">Academic Year</span>
+                                    <span class="meta-value" style="font-weight:700;color:#667eea;">🎓 ${report.academic_year || 'N/A'}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Division</span>
+                                    <span class="meta-value">${report.division || 'N/A'}</span>
+                                </div>
+                                <div class="meta-item">
                                     <span class="meta-label">Guide</span>
                                     <span class="meta-value">${report.guide_name || 'N/A'}</span>
                                 </div>
-            
                                 <div class="meta-item">
-                                    <span class="meta-label">Date</span>
-                                    <span class="meta-value">${report.created_at || 'N/A'}</span>
+                                    <span class="meta-label">Submitted</span>
+                                    <span class="meta-value">${report.submission_date || report.created_at || 'N/A'}</span>
                                 </div>
                             </div>
                             <div class="pdf-actions">
                                 <button class="btn btn-view" onclick="pdfManager.viewPDF(${report.review_number}, '${report.group_id}')">
-                                    👁️ View
+                                    👁️ View PDF
                                 </button>
                                 <button class="btn btn-download" onclick="pdfManager.downloadPDF(${report.review_number}, '${report.group_id}')">
                                     ⬇️ Download

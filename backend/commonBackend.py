@@ -1,7 +1,8 @@
 # backend/commonBackend.py
-from backend.db import get_connection, close_connection
+from backend.db import get_connection, close_connection, add_year_prefix, strip_year_prefix, get_academic_year
 import re
 from typing import List, Dict, Optional, Any
+
 
 
 # ==================== SECURITY UTILITIES ====================
@@ -12,15 +13,16 @@ def validate_review_number(review_number: int) -> bool:
 
 
 def validate_group_id(group_id: str) -> bool:
-    """Validate group ID format (adjust pattern to match your actual format)"""
-    # Example: allows alphanumeric and hyphens, max 20 chars
-    return bool(re.match(r'^[A-Za-z0-9\-]{1,20}$', group_id))
+    """Validate group ID format"""
+    # Allow alphanumeric, hyphens, underscores, and length up to 40 chars
+    return bool(re.match(r'^[A-Za-z0-9\-_]{1,40}$', group_id))
 
 
 def validate_roll_no(roll_no: str) -> bool:
     """Validate roll number format"""
-    # Example: allows alphanumeric, max 15 chars
-    return bool(re.match(r'^[A-Za-z0-9]{1,15}$', roll_no))
+    # Allow alphanumeric, hyphens, underscores, and length up to 30 chars
+    return bool(re.match(r'^[A-Za-z0-9\-_]{1,30}$', roll_no))
+
 
 
 def validate_criteria_id(criteria_id: str) -> bool:
@@ -106,9 +108,13 @@ def fetch_members(group_id: str, review_number: int = 1) -> List[Dict]:
             ORDER BY roll_no
         """
         
-        cursor.execute(query, (group_id,))
+        cursor.execute(query, (add_year_prefix(group_id),))
         members = cursor.fetchall()
         
+        # Strip prefixes
+        for m in members:
+            m['roll_no'] = strip_year_prefix(m['roll_no'])
+            
         print(f"Fetched {len(members)} members for review {review_number}")
         return members
 
@@ -142,6 +148,7 @@ def update_review_attendance(review_number: int, group_id: str, attendance: List
             print("Failed to sanitize column name")
             return False
         
+        db_group_id = add_year_prefix(group_id)
         for record in attendance:
             roll_no = record.get("roll_no", "")
             
@@ -151,6 +158,7 @@ def update_review_attendance(review_number: int, group_id: str, attendance: List
                 continue
             
             present = 1 if record.get("present") else 0
+            db_roll_no = add_year_prefix(roll_no)
 
             # Parameterized query with sanitized column name
             query = f"""
@@ -158,7 +166,7 @@ def update_review_attendance(review_number: int, group_id: str, attendance: List
                 SET {attendance_col} = %s 
                 WHERE roll_no = %s AND group_id = %s
             """
-            cursor.execute(query, (present, roll_no, group_id))
+            cursor.execute(query, (present, db_roll_no, db_group_id))
 
         conn.commit()
         print(f"Attendance updated for group {group_id} - Review {review_number}")
@@ -198,9 +206,11 @@ def get_group_members_for_review(review_number: int, group_id: str) -> List[Dict
             WHERE group_id = %s
             ORDER BY roll_no
         """
-        cursor.execute(query, (group_id,))
+        cursor.execute(query, (add_year_prefix(group_id),))
         
         members = cursor.fetchall()
+        for m in members:
+            m['roll_no'] = strip_year_prefix(m['roll_no'])
         return members
 
     except Exception as e:
@@ -209,6 +219,7 @@ def get_group_members_for_review(review_number: int, group_id: str) -> List[Dict
 
     finally:
         close_connection(conn)
+
 
 
 # ==================== MARKS FUNCTIONS ====================
@@ -260,13 +271,16 @@ def save_review_marks(review_number: int, marks_list: List[Dict]) -> bool:
                 print(f"Invalid group_id or roll_no: {group_id}, {roll_no}")
                 continue
             
+            db_group_id = add_year_prefix(group_id)
+            db_roll_no = add_year_prefix(roll_no)
+
             # Build dynamic column list and values
             columns_str = ', '.join(criteria_columns)
             placeholders = ', '.join(['%s'] * len(criteria_columns))
             update_str = ', '.join([f"{col} = VALUES({col})" for col in criteria_columns])
             
             # Extract and validate values
-            values = [group_id, roll_no]
+            values = [db_group_id, db_roll_no]
             for col in criteria_columns:
                 val = marks.get(col, 0)
                 # Validate numeric values for numeric columns, allow strings for text columns
@@ -330,9 +344,12 @@ def get_review_marks(review_number: int, group_id: str) -> List[Dict]:
             WHERE group_id = %s
             ORDER BY roll_no
         """
-        cursor.execute(query, (group_id,))
+        cursor.execute(query, (add_year_prefix(group_id),))
         
         marks = cursor.fetchall()
+        for row in marks:
+            row['group_id'] = strip_year_prefix(row['group_id'])
+            row['roll_no'] = strip_year_prefix(row['roll_no'])
         return marks
 
     except Exception as e:
@@ -376,8 +393,9 @@ def save_review_responses(review_number: int, group_id: str, date: str,
         
         valid_columns = {row['COLUMN_NAME'] for row in cursor.fetchall()}
         
+        db_group_id = add_year_prefix(group_id)
         columns = ['group_id', 'submission_date', 'comments']
-        values = [group_id, date, comments[:1000] if comments else None]  # Limit comment length
+        values = [db_group_id, date, comments[:1000] if comments else None]  # Limit comment length
         updates = ['comments = VALUES(comments)', 'submission_date = VALUES(submission_date)']
         
         for resp in responses:
@@ -419,7 +437,7 @@ def save_review_responses(review_number: int, group_id: str, date: str,
         return {
             'success': True,
             'action': action,
-            'group_id': group_id
+            'group_id': strip_year_prefix(db_group_id)
         }
 
     except Exception as e:
@@ -455,7 +473,7 @@ def get_review_responses(review_number: int, group_id: str) -> Optional[Dict]:
         cursor.execute(f"""
             SELECT * FROM {table_name} 
             WHERE group_id = %s
-        """, (group_id,))
+        """, (add_year_prefix(group_id),))
         
         submission = cursor.fetchone()
         
@@ -486,7 +504,7 @@ def get_review_responses(review_number: int, group_id: str) -> Optional[Dict]:
             date_str = str(submission_date)
         
         result = {
-            'group_id': submission['group_id'],
+            'group_id': strip_year_prefix(submission['group_id']),
             'submission_date': date_str,
             'comments': submission['comments'] or '',
             'created_at': str(submission['created_at']),
@@ -501,6 +519,7 @@ def get_review_responses(review_number: int, group_id: str) -> Optional[Dict]:
         import traceback
         traceback.print_exc()
         return None
+
 
     finally:
         close_connection(conn)
@@ -587,8 +606,9 @@ def get_available_pdf_reports() -> List[Dict]:
     try:
         cursor = conn.cursor(dictionary=True)
         reports = []
+        active_year = get_academic_year()
         
-        # Query for each review type (1-4)
+        # Query for each review type (0-4)
         for review_num in range(0, 5):
             table_name = sanitize_table_name(review_num, 'group_responses')
             if not table_name:
@@ -597,7 +617,8 @@ def get_available_pdf_reports() -> List[Dict]:
             query = f"""
                 SELECT 
                     r.group_id,
-                    r.created_at,  -- ✅ using creation timestamp instead of submission_date
+                    r.submission_date,
+                    r.created_at,
                     p.project_title,
                     p.guide_name,
                     p.division,
@@ -608,22 +629,29 @@ def get_available_pdf_reports() -> List[Dict]:
                     {review_num} AS review_number
                 FROM {table_name} r
                 JOIN projects p ON r.group_id = p.group_id
+                WHERE r.group_id LIKE %s
                 ORDER BY r.created_at DESC, p.group_id
             """
             
-            cursor.execute(query)
+            cursor.execute(query, (f"{active_year}_%",))
             review_reports = cursor.fetchall()
             
-            # Convert datetime objects to readable strings
+            # Convert datetime objects to readable strings and strip prefix
             for report in review_reports:
+                report['group_id'] = strip_year_prefix(report['group_id'])
+                report['academic_year'] = active_year  # Always use admin-set year
                 if report.get('created_at'):
                     from datetime import datetime
                     if isinstance(report['created_at'], datetime):
-                        report['created_at'] = report['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+                        report['created_at'] = report['created_at'].strftime('%Y-%m-%d %H:%M')
+                if report.get('submission_date'):
+                    from datetime import date as date_type
+                    if isinstance(report['submission_date'], date_type):
+                        report['submission_date'] = report['submission_date'].strftime('%d/%m/%Y')
             
             reports.extend(review_reports)
         
-        print(f"Found {len(reports)} available PDF reports")
+        print(f"Found {len(reports)} available PDF reports for AY {active_year}")
         return reports
     
     except Exception as e:
@@ -634,6 +662,7 @@ def get_available_pdf_reports() -> List[Dict]:
     
     finally:
         close_connection(conn)
+
 
 def check_pdf_data_availability(review_number: int, group_id: str) -> Dict[str, Any]:
     """
@@ -651,14 +680,15 @@ def check_pdf_data_availability(review_number: int, group_id: str) -> Dict[str, 
     
     try:
         cursor = conn.cursor(dictionary=True)
+        db_group_id = add_year_prefix(group_id)
         
         # Check if project exists
-        cursor.execute("SELECT COUNT(*) as count FROM projects WHERE group_id = %s", (group_id,))
+        cursor.execute("SELECT COUNT(*) as count FROM projects WHERE group_id = %s", (db_group_id,))
         if cursor.fetchone()['count'] == 0:
             return {'available': False, 'error': f'Project not found for group {group_id}'}
         
         # Check if members exist
-        cursor.execute("SELECT COUNT(*) as count FROM members WHERE group_id = %s", (group_id,))
+        cursor.execute("SELECT COUNT(*) as count FROM members WHERE group_id = %s", (db_group_id,))
         if cursor.fetchone()['count'] == 0:
             return {'available': False, 'error': f'No members found for group {group_id}'}
         
@@ -667,14 +697,14 @@ def check_pdf_data_availability(review_number: int, group_id: str) -> Dict[str, 
         if not responses_table:
             return {'available': False, 'error': 'Invalid table name'}
         
-        cursor.execute(f"SELECT COUNT(*) as count FROM {responses_table} WHERE group_id = %s", (group_id,))
+        cursor.execute(f"SELECT COUNT(*) as count FROM {responses_table} WHERE group_id = %s", (db_group_id,))
         if cursor.fetchone()['count'] == 0:
             return {'available': False, 'error': f'No review {review_number} responses found for group {group_id}'}
         
         # Check if marks exist (optional, but helpful)
         marks_table = sanitize_table_name(review_number, 'marks')
         if marks_table:
-            cursor.execute(f"SELECT COUNT(*) as count FROM {marks_table} WHERE group_id = %s", (group_id,))
+            cursor.execute(f"SELECT COUNT(*) as count FROM {marks_table} WHERE group_id = %s", (db_group_id,))
             marks_count = cursor.fetchone()['count']
             if marks_count == 0:
                 print(f"Warning: No marks found for review {review_number}, group {group_id}")
@@ -728,7 +758,7 @@ def log_pdf_generation(review_number: int, group_id: str,
         
         cursor.execute(query, (
             review_number, 
-            group_id, 
+            add_year_prefix(group_id), 
             generated_by[:100] if generated_by else None,
             ip_address[:45] if ip_address else None,
             user_agent[:500] if user_agent else None
@@ -761,7 +791,7 @@ def get_all_groups_with_attendance() -> List[Dict]:
     try:
         cursor = conn.cursor(dictionary=True)
         
-        # Fetch all members with attendance data
+        # Fetch all members with attendance data for the current year
         query = """
             SELECT 
                 member_id,
@@ -775,16 +805,18 @@ def get_all_groups_with_attendance() -> List[Dict]:
                 review3_attendance,
                 review4_attendance
             FROM members
+            WHERE group_id LIKE %s
             ORDER BY group_id, roll_no
         """
         
-        cursor.execute(query)
+        cursor.execute(query, (f"{get_academic_year()}_%",))
         members = cursor.fetchall()
         
-        # Group members by group_id
+        # Group members by group_id (stripped)
         groups_dict = {}
         for member in members:
-            group_id = member['group_id']
+            group_id = strip_year_prefix(member['group_id'])
+            roll_no = strip_year_prefix(member['roll_no'])
             
             if group_id not in groups_dict:
                 groups_dict[group_id] = {
@@ -794,7 +826,7 @@ def get_all_groups_with_attendance() -> List[Dict]:
             
             groups_dict[group_id]['members'].append({
                 'member_id': member['member_id'],
-                'roll_no': member['roll_no'],
+                'roll_no': roll_no,
                 'student_name': member['student_name'],
                 'contact_details': member['contact_details'],
                 'review0_attendance': bool(member['review0_attendance']),
@@ -822,8 +854,7 @@ def get_all_groups_with_attendance() -> List[Dict]:
 
 def generate_attendance_pdf_report() -> Dict[str, Any]:
     """
-    Generate attendance PDF report for all groups
-    Returns dict with success status and PDF buffer or error
+    Generate attendance PDF report for all groups in current academic year
     """
     conn = get_connection()
     if not conn:
@@ -832,7 +863,7 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
     try:
         cursor = conn.cursor(dictionary=True)
         
-        # Fetch all members with attendance and project info
+        # Fetch all members with attendance and project info for current year
         query = """
             SELECT 
                 m.group_id,
@@ -846,10 +877,11 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
                 p.division
             FROM members m
             LEFT JOIN projects p ON m.group_id = p.group_id
+            WHERE m.group_id LIKE %s
             ORDER BY m.group_id, m.roll_no
         """
         
-        cursor.execute(query)
+        cursor.execute(query, (f"{get_academic_year()}_%",))
         members = cursor.fetchall()
         
         if not members:
@@ -880,7 +912,7 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
         
         # Title
         title = Paragraph(
-            f"<b>Attendance Report - Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}</b>",
+            f"<b>Attendance Report - Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')} (AY: {get_academic_year()})</b>",
             styles['Title']
         )
         elements.append(title)
@@ -889,7 +921,9 @@ def generate_attendance_pdf_report() -> Dict[str, Any]:
         # Group data by group_id
         groups_dict = {}
         for member in members:
-            group_id = member['group_id']
+            group_id = strip_year_prefix(member['group_id'])
+            member['group_id'] = group_id
+            member['roll_no'] = strip_year_prefix(member['roll_no'])
             if group_id not in groups_dict:
                 groups_dict[group_id] = {
                     'project_title': member.get('project_title', 'N/A'),
