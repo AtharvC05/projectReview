@@ -757,13 +757,16 @@ def api_save_review6_responses():
     data = request.get_json()
     group_id = data.get("group_id")
     date = data.get("date")
-    comments = data.get("comments")
-    responses = data.get("responses")
-    if not group_id or not date or not isinstance(responses, dict):
-        return jsonify({"error": "Invalid payload"}), 400
+    comments = data.get("comments", "")
+    responses = data.get("responses", [])
+    if not group_id or not date:
+        return jsonify({"error": "Missing group_id or date"}), 400
     result = save_review6_responses(group_id, date, comments, responses)
-    if result["success"]:
-        return jsonify({"message": "Responses saved successfully"}), 200
+    if result.get("success"):
+        return jsonify({
+            "message": "Responses saved successfully",
+            "action": result.get("action")
+        }), 200
     return jsonify({"error": result.get("error", "Failed to save responses")}), 500
 
 
