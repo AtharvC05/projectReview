@@ -407,6 +407,7 @@ def process_division_enhanced_with_normalization(df, division_name):
                         processed_groups.append(group_id)
                         
                 except Exception as project_error:
+                    print(f"Error inserting project {group_id}: {project_error}", flush=True)
                     logger.error(f"Error inserting project {group_id}: {str(project_error)}")
             
             # Process member data with normalized column access
@@ -443,9 +444,11 @@ def process_division_enhanced_with_normalization(df, division_name):
 
                         
                 except Exception as member_error:
+                    print(f"Error inserting member for {group_id}: {member_error}", flush=True)
                     logger.error(f"Error inserting member for {group_id}: {str(member_error)}")
                 
         except Exception as row_error:
+            print(f"Error processing row {i} in {division_name}: {row_error}", flush=True)
             logger.warning(f"Error processing row {i} in {division_name}: {str(row_error)}")
             continue
             
@@ -533,11 +536,13 @@ def process_all_data_with_normalization(div_a, div_b, sched):
                     all_scheduled_groups.add(group_id)
                     
                 except Exception as assignment_error:
+                    print(f"Error assigning {assignment['group_id']}: {assignment_error}", flush=True)
                     logger.error(f"Error assigning {assignment['group_id']}: {str(assignment_error)}")
             
             schedule_processed += 1
             
         except Exception as e:
+            print(f"Error processing schedule row {i}: {e}", flush=True)
             logger.warning(f"Error processing schedule row {i}: {str(e)}")
             continue
     
@@ -749,6 +754,7 @@ def import_excel():
         })
         
     except Exception as e:
+        print(f"❌ Import error in data_manager: {e}", flush=True)
         logger.error(f"Import error: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': str(e)}), 500
 
