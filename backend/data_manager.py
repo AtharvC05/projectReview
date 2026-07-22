@@ -149,6 +149,26 @@ def normalize_column_name(column_name: str) -> str:
     
     return column_name
 
+def load_excel_sheet_with_smart_header(xls, sheet_name, is_schedule=False):
+    """Dynamically locate header row in Excel sheet and parse DataFrame"""
+    try:
+        df_raw = pd.read_excel(xls, sheet_name=sheet_name, header=None)
+        header_row_idx = 0
+        target_keywords = ['TRACK', 'PANEL', 'GROUP ID', 'LOCATION'] if is_schedule else ['GROUP NO', 'ROLL NO', 'MEMBER', 'DOMAIN', 'TITLE', 'GUIDE']
+        
+        for idx, row in df_raw.iloc[:10].iterrows():
+            row_str = " ".join([str(val).upper() for val in row.values if pd.notnull(val)])
+            if any(kw in row_str for kw in target_keywords):
+                header_row_idx = idx
+                break
+                
+        df = pd.read_excel(xls, sheet_name=sheet_name, skiprows=header_row_idx)
+        return df
+    except Exception as e:
+        logger.warning(f"Smart header detection fallback for {sheet_name}: {e}")
+        fallback_skip = 2 if is_schedule else 3
+        return pd.read_excel(xls, sheet_name=sheet_name, skiprows=fallback_skip)
+
 def normalize_sheet_name(sheet_name: str) -> str:
     """Normalize sheet names to identify division and schedule sheets"""
     if not sheet_name:
@@ -643,9 +663,9 @@ def load_stored_file():
             return jsonify({'success': False, 'error': 'Invalid stored file format'}), 400
 
         # Load and process data with normalization
-        div_a = pd.read_excel(xls, sheet_name=sheet_names['div_a'], skiprows=3)
-        div_b = pd.read_excel(xls, sheet_name=sheet_names['div_b'], skiprows=3)
-        sched = pd.read_excel(xls, sheet_name=sheet_names['schedule'], skiprows=2)
+        div_a = load_excel_sheet_with_smart_header(xls, sheet_names['div_a'], is_schedule=False)
+        div_b = load_excel_sheet_with_smart_header(xls, sheet_names['div_b'], is_schedule=False)
+        sched = load_excel_sheet_with_smart_header(xls, sheet_names['schedule'], is_schedule=True)
 
         # Normalize column names
         div_a = normalize_dataframe_columns(div_a)
@@ -717,9 +737,9 @@ def import_excel():
         save_success = save_admin_file(file_content, metadata)
         
         # Load and normalize data
-        div_a = pd.read_excel(xls, sheet_name=detected_sheets['div_a'], skiprows=3)
-        div_b = pd.read_excel(xls, sheet_name=detected_sheets['div_b'], skiprows=3)
-        sched = pd.read_excel(xls, sheet_name=detected_sheets['schedule'], skiprows=2)
+        div_a = load_excel_sheet_with_smart_header(xls, detected_sheets['div_a'], is_schedule=False)
+        div_b = load_excel_sheet_with_smart_header(xls, detected_sheets['div_b'], is_schedule=False)
+        sched = load_excel_sheet_with_smart_header(xls, detected_sheets['schedule'], is_schedule=True)
         
         # Normalize column names
         div_a = normalize_dataframe_columns(div_a)
