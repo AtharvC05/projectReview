@@ -324,6 +324,22 @@ def extract_all_group_ids(row_data):
     
     return sorted(list(all_groups))
 
+def parse_panel_professors(panel_text: str):
+    """Parse panel professor names handling multiline, merged rows, slashes, commas, and numbered lists"""
+    if not panel_text or pd.isnull(panel_text) or str(panel_text).strip().lower() == 'nan':
+        return []
+    text = str(panel_text).replace('\r\n', '\n').replace('\r', '\n')
+    text = re.sub(r'[/;,|&]', '\n', text)
+    lines = text.split('\n')
+    panel_profs = []
+    for line in lines:
+        clean = line.strip()
+        clean = re.sub(r'^[\d\w][.\)]\s*', '', clean).strip()
+        clean = re.sub(r'^[•\-\*]\s*', '', clean).strip()
+        if len(clean) >= 3 and any(c.isalpha() for c in clean) and not clean.lower().startswith('track') and not clean.lower().startswith('lab'):
+            panel_profs.append(clean)
+    return panel_profs
+
 def assign_evaluators_from_panel(panel_professors, group_ids):
     """Assign evaluators from panel professors"""
     if not panel_professors or len(panel_professors) < 2:
@@ -505,15 +521,9 @@ def process_all_data_with_normalization(div_a, div_b, sched):
                 
             track = int(track)
             
-            # Use normalized column name
+            # Use normalized column name and parse multiline/merged/slash formatted names
             panel_text = str(row.get('Name of the Panel', ''))
-            panel_profs = []
-            if panel_text and panel_text != 'nan':
-                prof_lines = panel_text.replace('\n', '|').replace(',', '|').split('|')
-                for prof in prof_lines:
-                    clean_prof = prof.strip()
-                    if len(clean_prof) > 3 and not clean_prof.isdigit():
-                        panel_profs.append(clean_prof)
+            panel_profs = parse_panel_professors(panel_text)
             
             if not panel_profs:
                 panel_profs = [f"Default Panel {track} Prof 1", f"Default Panel {track} Prof 2", f"Default Panel {track} Prof 3"]
