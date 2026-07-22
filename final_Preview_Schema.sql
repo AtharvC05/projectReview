@@ -27,6 +27,7 @@ CREATE TABLE members (
 );
 
 alter table members add column review0_attendance  BOOLEAN DEFAULT FALSE;
+alter table members add column review6_attendance  BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE review1_marks (
     id INT AUTO_INCREMENT PRIMARY KEY,
